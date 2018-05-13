@@ -5,7 +5,7 @@ Setup
 ---------------------
 Hdac Core is the original Hdac client and it builds the backbone of the network. It downloads and, by default, stores the entire history of Hdac transactions ; depending on the speed of your computer and network connection, the synchronization process can take anywhere from a few hours to a day or more.
 
-To download Hdac Core, visit [http://www.hdactech.com](http://http://www.hdactech.com).
+To download Hdac Core, visit [https://hdactech.com](https://hdactech.com).
  or [hdac repo's release](/release).
 
 Running
