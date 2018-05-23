@@ -1,4 +1,4 @@
-HADC Core
+HDAC Core
 =============
 
 Setup
