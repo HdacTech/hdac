@@ -48,7 +48,7 @@ Linux BUILD ( on Ubuntu 16.04 x64 )
     ./configure
     make
    
-  4. Execution
+  4. run 
 
    This will build `hdacd`, `hdac-cli` and `hdac-util` in the `src` directory.
 
@@ -90,7 +90,7 @@ BUILD for Windows 7 or 10 ( on Ubuntu 16.04 )
     ./configure --prefix=`pwd`/depends/x86_64-w64-mingw32 --enable-cxx --disable-shared --enable-static --with-pic
     make
 
-  4. Execution
+  4. run
 
    This will build `hdacd.exe`, `hdac-cli.exe` and `hdac-util.exe` in the `src` directory.
 
@@ -109,7 +109,7 @@ Linux BUILD ( on CentOS 7 x86_64 )
 
     ./build.sh
      
-   3. Execution
+   3. run
 
    This will build `hdacd`, `hdac-cli` and `hdac-util` in the `src` directory.
 
@@ -134,7 +134,7 @@ BUILD for Windows 7 or 10 (on CentOS 7 )
 
     ./win_build.sh     
 
-   3. Execution
+   3. run
 
    This will build `hdacd.exe`, `hdac-cli.exe` and `hdac-util.exe` in the `src` directory.
 
@@ -162,7 +162,7 @@ Mac Build Notes (on MacOS Sierra)
     ./configure --with-gui=no --with-libs=no --with-miniupnpc=no
     make
 
-   4. Execution
+   4. run
 
    This will build `hdacd`, `hdac-cli` and `hdac-util` in the `src` directory.
 
