@@ -1,180 +1,173 @@
-HDAC Core
-=============
+Hdac Core
+==========
 
-Setup
----------------------
-Hdac Core is the original Hdac client and it builds the backbone of the network. It downloads and, by default, stores the entire history of Hdac transactions ; depending on the speed of your computer and network connection, the synchronization process can take anywhere from a few hours to a day or more.
+Hdac is licensed under the GPLv3 open source license. 
+We also offer commercial licenses for those wishing to integrate Hdac 
+into a proprietary software solution.
 
-To download Hdac Core, visit [https://hdactech.com](https://hdactech.com).
- or [hdac repo's release](/release).
+    Copyright (c) 2017 Hdac Technology AG
+    License: GNU General Public License version 3, see COPYING
 
-Running
----------------------
-The following are some helpful notes on how to run Hdac on your native platform.
+    Portions copyright (c) 2009-2016 The Bitcoin Core developers
+    Portions copyright many others - see individual files
 
-### Linux
-
-Unpack the files into a directory and run:
-
-- hdacd hdac@seednode-URL:port
-- port is `8823`, seed node are `seed.as.hdactech.com`, `seed.us.hdactech.com`,`seed.eu.hdactech.com`
-- default data directory is `$HOME/.hdac/hdac`
-- if you want to change HDAC data directory, user runtime parameter "-datadir".
-
-- running example
-```
-$ hdacd hdac@seed.as.hdactech.com:8823
-
-Hdac 1.01.0 Daemon (latest protocol 20000)
-
-Retrieving blockchain parameters from the seed node seed.as.hdactech.com:8823 ...
-Other nodes can connect to this node using:
-hdacd hdac@xxx.xxx.xxx.xxx:8823
-
-This host has multiple IP addresses, so from some networks:
-hdacd hdac@xxx.xxx.xxx.xxx:8823
-
-Listening for API requests on port 8822 (local only - see rpcallowip setting)
-
-Node ready.
-```
-
-- daemon runtime parameters ( daemon, datadir, etc... )
-```
-$ hdacd hdac@seed.as.hdactech.com:8823 -daemon -datadir="$HOME/datadir"
-```
-
-### Windows
-
-Unpack the files into a directory, and then run hdacd.exe.
-
-- default data directory is `%APPDATA%/Hdac/hdac`
-- if you want to change data directory, user runtime parameter "-datadir".
-- how to connection is the same as on linux.
+    Portions copyright (c) 2014-2017 Coin Sciences Ltd
+    Portions copyright many others - see individual files
 
 
-### Mac OS
+System requirements
+-------------------
 
-Unpack the files into a directory and run:
-
-- default data directory is `$HOME/.hdac/hdac`
-- if you want to change HDAC data directory, user runtime parameter "-datadir".
-- how to connection is the same as on linux.
-
-### Common Operations
-
-- Run HDAC with interactive mode (※ not supported in Windows).
-- to issue commands without typing "hdac-cli hdac ..." every time, use interactive mode
-```
-$ hdac-cli hdac
-
-Hdac 1.01.0 RPC client
+    C++ compilers are memory-hungry, 
+    so it is recommended to have at least 1 GB of memory available when compiling Hdac.
 
 
-Interactive mode
+Linux BUILD ( on Ubuntu 16.04 x64 )
+-----------
 
-hdac:
-```
----------------------------------------------------------------------
-
-- get general node info : `hdac-cli hdac getinfo`
-```
-$ hdac-cli hdac getinfo
-{"method":"getinfo","params":[],"id":1,"chain_name":"hdac"}
-
-{
-    "version" : "1.01.0",
-    "protocolversion" : 20000,
-    "chainname" : "hdac",
-    "protocol" : "hdac",
-    "port" : 8823,
-    "nodeaddress" : "hdac@xxx.xxx.xxx.xxx:8823",
-    "burnaddress" : "HJXXXXXXXXXXXXXXXXXXXXXXXXXXVarS5i",
-    "balance" : 0.00000000,
-    "reindex" : false,
-    "blocks" : xxxxx,
-    "chain-blocks" : xxxxx,
-    "timeoffset" : 32,
-    "connections" : 8,
-    "proxy" : "",
-    "difficulty" : xx.xxxx,
-    "testnet" : false,
-    "keypoololdest" : 1522903582,
-    "keypoolsize" : 2,
-    "paytxfee" : 0.00000000,
-    "relayfee" : 0.01000000,
-    "errors" : ""
-}
-
-```
----------------------------------------------------------------------
-
-- get default address of my wallet : `hdac-cli hdac getaddresses`
-
-```
-$ hdac-cli hdac getaddresses
-{"method":"getaddresses","params":[],"id":1,"chain_name":"hdac"}
-
-[
-    "HAr1viBPFik7X7UHZonVqmPnryiCgDijij"
-]
-```
----------------------------------------------------------------------
-
-- get new address for my wallet : `hdac-cli hdac getnewaddress`
-
-```
-$ hdac-cli hdac getnewaddress
-{"method":"getnewaddress","params":[],"id":1,"chain_name":"hdac"}
-
-H8dkwEgbF1aayGd3WfgfENWkQoQeSeghtm
-```
----------------------------------------------------------------------
-
-- get ballance of my wallet : `hdac-cli hdac getbalance`
-
-```
-$ hdac-cli hdac getbalance
-{"method":"getbalance","params":[],"id":1,"chain_name":"hdac"}
-
-99.00000000
-```
----------------------------------------------------------------------
-
-- send money : `hdac-cli hdac send "address" "amount"`
-
-```
-$ hdac-cli hdac send HAr1viBPFik7X7UHZonVqmPnryiCgDijij 100
-{"method":"send","params":["HAr1viBPFik7X7UHZonVqmPnryiCgDijij",100],"id":1,"chain_name":"hdac"}
-
-8d40da1a8160427dc72f51cf18408505b0e99e369d86970b1a375a11a621d62a
-```
----------------------------------------------------------------------
-
-- For other commands, please run help. : `hdac-cli hdac help`
-
-```
-$ hdac-cli hdac help
-{"method":"help","params":[],"id":1,"chain_name":"hdac"}
-
-== Blockchain ==
-getbestblockhash
-getblock "hash"|height ( verbose )
-getblockchaininfo
-getblockcount
-getblockhash index
-getchaintips
-getdifficulty
-getmempoolinfo
-getrawmempool ( verbose )
-gettxout "txid" n ( includemempool )
-gettxoutsetinfo
-listassets ( asset-identifier(s) verbose count start )
-
-....
+  1. Install dependencies
+    
+    sudo apt-get update
+    sudo apt-get install build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils
+    sudo apt-get install libboost-all-dev
+    sudo apt-get install git
+    sudo apt-get install software-properties-common
+    sudo add-apt-repository ppa:bitcoin/bitcoin
+    sudo apt-get update
+    sudo apt-get install libdb4.8-dev libdb4.8++-dev
 
 
-```
----------------------------------------------------------------------
+  2. Compile Hdac for Ubuntu (64-bit)
+    
+    ./build.sh
+    
+  3. If you are having trouble compiling, please try below
 
+    ./clean.sh
+    ./autogen.sh
+    ./configure
+    make
+   
+  4. Execution
+
+   This will build `hdacd`, `hdac-cli` and `hdac-util` in the `src` directory.
+
+   The release is built with GCC after which `strip hdacd` strings the debug symbols, 
+   which reduces the executable size by about 90%.
+
+  5. Clean build
+
+    ./clean.sh
+    
+
+
+BUILD for Windows 7 or 10 ( on Ubuntu 16.04 )
+---------------------------------------------
+
+
+  1. Install dependencies
+
+    sudo apt-get update
+    sudo apt-get install build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils
+    sudo apt-get install g++-mingw-w64-i686 mingw-w64-i686-dev g++-mingw-w64-x86-64 mingw-w64-x86-64-dev curl
+    sudo apt-get install libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev libboost-test-dev libboost-thread-dev
+    sudo apt-get install git
+    sudo add-apt-repository ppa:bitcoin/bitcoin
+    sudo apt-get update
+    sudo apt-get install libdb4.8-dev libdb4.8++-dev
+
+  2. Compile Hdac for Windows (64-bit)
+
+    ./win_build.sh    
+    
+  3. If you are having trouble compiling, please try below
+
+    ./clean.sh
+    ./autogen.sh
+    cd depends
+    make HOST=x86_64-w64-mingw32 -j4
+    cd ..
+    ./configure --prefix=`pwd`/depends/x86_64-w64-mingw32 --enable-cxx --disable-shared --enable-static --with-pic
+    make
+
+  4. Execution
+
+   This will build `hdacd.exe`, `hdac-cli.exe` and `hdac-util.exe` in the `src` directory.
+
+
+
+Linux BUILD ( on CentOS 7 x86_64 )
+----------------------------------
+
+   1. Install dependencies
+
+     yum groupinstall "Development Tools"
+     yum install wget
+     
+     
+   2. Compile Hdac for CentOS 7 (64-bit)
+
+    ./build.sh
+     
+   3. Execution
+
+   This will build `hdacd`, `hdac-cli` and `hdac-util` in the `src` directory.
+
+   4. Clean build
+
+    ./clean.sh
+     
+     
+BUILD for Windows 7 or 10 (on CentOS 7 )
+----------------------------------------
+
+
+   1. Install dependencies
+
+     yum groupinstall "Development Tools"
+     yum install wget
+     yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+     yum install mingw64-*
+ 
+ 
+   2. Compile Hdac for Windows
+
+    ./win_build.sh     
+
+   3. Execution
+
+   This will build `hdacd.exe`, `hdac-cli.exe` and `hdac-util.exe` in the `src` directory.
+
+
+Mac Build Notes (on MacOS Sierra)
+---------------------------------
+
+   1. Install dependencies
+
+    Install XCode and XCode command line tools
+    Install git from git-scm
+    Install brew (follow instructions on brew.sh)
+    brew install autoconf automake berkeley-db4 libtool boost openssl pkg-config rename
+
+   2. Compile Hdac for Mac (64-bit)
+
+    ./mac_build.sh
+    
+
+   3. If you are having trouble compiling, please try below
+
+    export LDFLAGS=-L/usr/local/opt/openssl/lib
+    export CPPFLAGS=-I/usr/local/opt/openssl/include
+    ./autogen.sh
+    ./configure --with-gui=no --with-libs=no --with-miniupnpc=no
+    make
+
+   4. Execution
+
+   This will build `hdacd`, `hdac-cli` and `hdac-util` in the `src` directory.
+
+
+Running Core Daemon
+-------------------
+[/doc/RUN.md](/doc/RUN.md) contains relevant infomation on How to run Hdac on your native platform. ( Linux, windows, Mac OS )
 
