@@ -28,7 +28,7 @@ void InvalidMempoolWTx(const uint256& wtxid, const char * reason)
     {
         if(pwalletTxsMain->SaveTxFlag((unsigned char*)&wtxid,MC_TFL_INVALID,1) != MC_ERR_NOT_FOUND)
         {
-            LogPrintf("wtxs: Tx %s was removed from mempool: %s, setting INVALID flag\n", wtxid.ToString(),reason);            
+            if(fDebug>0)LogPrintf("wtxs: Tx %s was removed from mempool: %s, setting INVALID flag\n", wtxid.ToString(),reason);            
         }
     }
 }
@@ -188,8 +188,8 @@ public:
         else
             throw runtime_error("Corrupt priority value in estimates file.");
         if (feeSamples.size() + prioritySamples.size() > 0)
-            LogPrint("estimatefee", "Read %d fee samples and %d priority samples\n",
-                     feeSamples.size(), prioritySamples.size());
+            if(fDebug>1)LogPrint("estimatefee", "Read %d fee samples and %d priority samples\n",
+                                  feeSamples.size(), prioritySamples.size());
     }
 };
 
@@ -236,8 +236,8 @@ private:
             // Neither or both fee and priority sufficient to get confirmed:
             // don't know why they got confirmed.
         }
-        LogPrint("estimatefee", "Seen TX confirm: %s : %s fee/%g priority, took %d blocks\n",
-                 assignedTo, feeRate.ToString(), dPriority, nBlocksAgo);
+        if(fDebug>1)LogPrint("estimatefee", "Seen TX confirm: %s : %s fee/%g priority, took %d blocks\n",
+                               assignedTo, feeRate.ToString(), dPriority, nBlocksAgo);
     }
 
 public:
@@ -303,10 +303,10 @@ public:
 
         for (size_t i = 0; i < history.size(); i++) {
             if (history[i].FeeSamples() + history[i].PrioritySamples() > 0)
-                LogPrint("estimatefee", "estimates: for confirming within %d blocks based on %d/%d samples, fee=%s, prio=%g\n", 
-                         i,
-                         history[i].FeeSamples(), history[i].PrioritySamples(),
-                         estimateFee(i+1).ToString(), estimatePriority(i+1));
+                if(fDebug>1)LogPrint("estimatefee", "estimates: for confirming within %d blocks based on %d/%d samples, fee=%s, prio=%g\n", 
+                                      i,
+                                      history[i].FeeSamples(), history[i].PrioritySamples(),
+                                      estimateFee(i+1).ToString(), estimatePriority(i+1));
         }
     }
 
@@ -689,7 +689,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
     if (!fSanityCheck)
         return;
 
-    LogPrint("mempool", "Checking mempool with %u transactions and %u inputs\n", (unsigned int)mapTx.size(), (unsigned int)mapNextTx.size());
+    if(fDebug>1)LogPrint("mempool", "Checking mempool with %u transactions and %u inputs\n", (unsigned int)mapTx.size(), (unsigned int)mapNextTx.size());
 
     uint64_t checkTotal = 0;
 
@@ -797,7 +797,7 @@ CTxMemPool::WriteFeeEstimates(CAutoFile& fileout) const
         minerPolicyEstimator->Write(fileout);
     }
     catch (const std::exception &) {
-        LogPrintf("CTxMemPool::WriteFeeEstimates() : unable to write policy estimator data (non-fatal)");
+        if(fDebug>0)LogPrintf("CTxMemPool::WriteFeeEstimates() : unable to write policy estimator data (non-fatal)");
         return false;
     }
     return true;
@@ -816,7 +816,7 @@ CTxMemPool::ReadFeeEstimates(CAutoFile& filein)
         minerPolicyEstimator->Read(filein, minRelayFee);
     }
     catch (const std::exception &) {
-        LogPrintf("CTxMemPool::ReadFeeEstimates() : unable to read policy estimator data (non-fatal)");
+        if(fDebug>0)LogPrintf("CTxMemPool::ReadFeeEstimates() : unable to read policy estimator data (non-fatal)");
         return false;
     }
     return true;

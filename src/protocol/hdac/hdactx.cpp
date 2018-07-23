@@ -427,7 +427,7 @@ bool AcceptAssetGenesisFromPredefinedIssuers(const CTransaction &tx,
                     }
                     if(update_mempool)
                     {
-                        if(fDebug)LogPrint("hdac","Found asset issue script in tx %s for %s - (%ld)\n",
+                        if(fDebug>1)LogPrint("hdac","Found asset issue script in tx %s for %s - (%ld)\n",
                                 tx.GetHash().GetHex().c_str(),
                                 address.ToString().c_str(),quantity);                    
                     }
@@ -449,7 +449,7 @@ bool AcceptAssetGenesisFromPredefinedIssuers(const CTransaction &tx,
                     {
                         if(update_mempool)
                         {
-                            if(fDebug)LogPrint("hdac","Found asset follow-on script in tx %s\n",
+                            if(fDebug>1)LogPrint("hdac","Found asset follow-on script in tx %s\n",
                                     tx.GetHash().GetHex().c_str());                    
                         }
                     }
@@ -719,7 +719,7 @@ bool AcceptAssetGenesisFromPredefinedIssuers(const CTransaction &tx,
                 }
             }
             
-            if(fDebug)LogPrint("hdac","Asset already exists. TxID: %s, AssetRef: %d-%d-%d, Name: %s\n",
+            if(fDebug>1)LogPrint("hdac","Asset already exists. TxID: %s, AssetRef: %d-%d-%d, Name: %s\n",
                     tx.GetHash().GetHex().c_str(),
                     mc_gState->m_Assets->m_Block+1,offset,(int)(*((unsigned char*)&txid+31))+256*(int)(*((unsigned char*)&txid+30)),
                     entity.GetName());                                        
@@ -736,7 +736,7 @@ bool AcceptAssetGenesisFromPredefinedIssuers(const CTransaction &tx,
             {
                 if(new_issue)
                 {
-                    if(fDebug)LogPrint("hdac","New asset. TxID: %s, AssetRef: %d-%d-%d, Name: %s\n",
+                    if(fDebug>1)LogPrint("hdac","New asset. TxID: %s, AssetRef: %d-%d-%d, Name: %s\n",
                             tx.GetHash().GetHex().c_str(),
                             mc_gState->m_Assets->m_Block+1,offset,(int)(*((unsigned char*)&txid+0))+256*(int)(*((unsigned char*)&txid+1)),
                             this_entity.GetName());                                        
@@ -745,7 +745,7 @@ bool AcceptAssetGenesisFromPredefinedIssuers(const CTransaction &tx,
                 {
                     uint256 otxid;
                     memcpy(&otxid,entity.GetTxID(),32);
-                    if(fDebug)LogPrint("hdac","Follow-on issue. TxID: %s,  Original issue txid: %s\n",
+                    if(fDebug>1)LogPrint("hdac","Follow-on issue. TxID: %s,  Original issue txid: %s\n",
                             tx.GetHash().GetHex().c_str(),otxid.GetHex().c_str());
                 }
             }
@@ -1209,15 +1209,15 @@ bool AcceptHdacTransaction(const CTransaction& tx,
                             uint256 upgrade_hash=*(uint256*)(entity.GetTxID());
                             if(approval)
                             {
-                                LogPrintf("Found approval script in tx %s for %s\n",
-                                        tx.GetHash().GetHex().c_str(),
-                                        upgrade_hash.ToString().c_str());
+                                if(fDebug>0)LogPrintf("Found approval script in tx %s for %s\n",
+                                                       tx.GetHash().GetHex().c_str(),
+                                                       upgrade_hash.ToString().c_str());
                             }
                             else
                             {
-                                LogPrintf("Found disapproval script in tx %s for %s\n",
-                                        tx.GetHash().GetHex().c_str(),
-                                        upgrade_hash.ToString().c_str());                                    
+                                if(fDebug>0)LogPrintf("Found disapproval script in tx %s for %s\n",
+                                                       tx.GetHash().GetHex().c_str(),
+                                                       upgrade_hash.ToString().c_str());                                    
                             }
 
                             bool fAdminFound=false;
@@ -1300,14 +1300,14 @@ bool AcceptHdacTransaction(const CTransaction& tx,
                             if(!pwalletMain->IsMineAddr(addr) /* && !candidateAddress.count(addr) */)
                             {
                                 //candidateAddress.insert(addr);
-                                if(fDebug)LogPrintf("[importtxaddrs] importing Address = %s (ismempool:%d) \n", CBitcoinAddress(addr).ToString().c_str(), (replay != NULL));
+                                if(fDebug>1)LogPrintf("[importtxaddrs] importing Address = %s (ismempool:%d) \n", CBitcoinAddress(addr).ToString().c_str(), (replay != NULL));
                                 
                                 bool sImport = addrImport(addr);
                                 if(!replay && sImport && (chainActive.Tip() != NULL))
                                 {
                                     int64_t start = GetTimeMillis();
                                     pwalletMain->ScanForWalletTransactions(chainActive.Tip(), true, true);
-                                    if(fDebug)LogPrintf("[importtxaddrs] ScanForWalletTransactions() time elapsed : %15dms\n",GetTimeMillis() - start);
+                                    if(fDebug>1)LogPrintf("[importtxaddrs] ScanForWalletTransactions() time elapsed : %15dms\n",GetTimeMillis() - start);
                                     pwalletMain->ReacceptWalletTransactions();
                                 }
                             }
@@ -1481,7 +1481,7 @@ bool AcceptHdacTransaction(const CTransaction& tx,
                                     ptr=(unsigned char*)(lpScriptID);
                                 }
                                 
-                                if(fDebug)LogPrint("hdac","Found permission script in tx %s for %s - (%08x: %d - %d)\n",
+                                if(fDebug>1)LogPrint("hdac","Found permission script in tx %s for %s - (%08x: %d - %d)\n",
                                         tx.GetHash().GetHex().c_str(),
                                         address.ToString().c_str(),
                                         type, from, to);
@@ -1507,7 +1507,7 @@ bool AcceptHdacTransaction(const CTransaction& tx,
                                                     if(type & MC_PTP_BANNED)
                                                     {
                                                         fCheckBannedScript = true;
-                                                        if(fDebug)LogPrintf("### Banned permission is set \n");
+                                                        if(fDebug>1)LogPrintf("### Banned permission is set \n");
                                                     }
                                                 }
                                             }
@@ -1546,8 +1546,8 @@ bool AcceptHdacTransaction(const CTransaction& tx,
                                             if(mine == ISMINE_WATCH_ONLY)
                                             {
                                                 fAdminFound = true;
-                                                if(fDebug)LogPrintf("Not Found Admin permission, because Address is watchonly.\n");
-                                                if(fDebug)LogPrintf("---> vout Address: %s\n", addrs.ToString().c_str());
+                                                if(fDebug>1)LogPrintf("Not Found Admin permission, because Address is watchonly.\n");
+                                                if(fDebug>1)LogPrintf("---> vout Address: %s\n", addrs.ToString().c_str());
                                                 //break;
                                             }
                                         }
@@ -1669,7 +1669,7 @@ bool AcceptHdacTransaction(const CTransaction& tx,
 
                     if(fCheckBannedScript)
                     {
-                        if(fDebug)LogPrintf("### This is tx with banned script \n");
+                        if(fDebug>1)LogPrintf("### This is tx with banned script \n");
                         break;
                     }
                     
@@ -1848,15 +1848,15 @@ bool AcceptHdacTransaction(const CTransaction& tx,
                 }
                 if(offset>=0)
                 {
-                    LogPrintf("New %s. TxID: %s, StreamRef: %d-%d-%d, Name: %s\n",
-                            entity_type_str.c_str(),tx.GetHash().GetHex().c_str(),
-                            mc_gState->m_Assets->m_Block+1,offset,(int)(*((unsigned char*)&txid+0))+256*(int)(*((unsigned char*)&txid+1)),
-                            entity.GetName());                                        
+                    if(fDebug>0)LogPrintf("New %s. TxID: %s, StreamRef: %d-%d-%d, Name: %s\n",
+                                           entity_type_str.c_str(),tx.GetHash().GetHex().c_str(),
+                                           mc_gState->m_Assets->m_Block+1,offset,(int)(*((unsigned char*)&txid+0))+256*(int)(*((unsigned char*)&txid+1)),
+                                           entity.GetName());                                        
                 }
                 else
                 {
-                    LogPrintf("New %s. TxID: %s, unconfirmed, Name: %s\n",
-                            entity_type_str.c_str(),tx.GetHash().GetHex().c_str(),entity.GetName());                                                            
+                    if(fDebug>0)LogPrintf("New %s. TxID: %s, unconfirmed, Name: %s\n",
+                                           entity_type_str.c_str(),tx.GetHash().GetHex().c_str(),entity.GetName());                                                            
                 }
             }
             else
@@ -1880,7 +1880,7 @@ exitlbl:
 
             if(!mc_gState->m_Permissions->CanConnect(NULL,seed_node->kAddrRemote.begin()))
             {
-                LogPrintf("hdac: Seed node lost connect permission \n");
+                if(fDebug>0)LogPrintf("hdac: Seed node lost connect permission \n");
                 mc_gState->m_pSeedNode=NULL;
             }
         }
@@ -1906,7 +1906,7 @@ exitlbl:
 
     if(fReject)
     {
-        if(fDebug)LogPrint("hdac","hdac: Tx rejected: %s\n",EncodeHexTx(tx));
+        if(fDebug>1)LogPrint("hdac","hdac: Tx rejected: %s\n",EncodeHexTx(tx));
     }
 
     return !fReject;
@@ -2194,7 +2194,7 @@ exitlbl:
     
     if(fReject)
     {
-        if(fDebug)LogPrint("hdac","hdac: AcceptAdminMinerPermissions: Tx rejected: %s\n",EncodeHexTx(tx));
+        if(fDebug>1)LogPrint("hdac","hdac: AcceptAdminMinerPermissions: Tx rejected: %s\n",EncodeHexTx(tx));
     }
 
     return !fReject;
@@ -2310,7 +2310,7 @@ bool AcceptAssetTransfers(const CTransaction& tx, const CCoinsViewCache &inputs,
         }
     }
     
-    if(fDebug)LogPrint("hdacminor","Found asset transfer script in tx %s, %d assets\n",
+    if(fDebug>1)LogPrint("hdacminor","Found asset transfer script in tx %s, %d assets\n",
             tx.GetHash().GetHex().c_str(),mc_gState->m_TmpAssetsOut->GetCount());                    
     for(int i=0;i<mc_gState->m_TmpAssetsIn->GetCount();i++)
     {
@@ -2477,7 +2477,7 @@ bool AcceptAssetGenesis(const CTransaction &tx,int offset,bool accept,string& re
                     }
                     if(update_mempool)
                     {
-                        if(fDebug)LogPrint("hdac","Found asset issue script in tx %s for %s - (%ld)\n",
+                        if(fDebug>1)LogPrint("hdac","Found asset issue script in tx %s for %s - (%ld)\n",
                                 tx.GetHash().GetHex().c_str(),
                                 address.ToString().c_str(),quantity);                    
                     }
@@ -2499,7 +2499,7 @@ bool AcceptAssetGenesis(const CTransaction &tx,int offset,bool accept,string& re
                     {
                         if(update_mempool)
                         {
-                            if(fDebug)LogPrint("hdac","Found asset follow-on script in tx %s\n",
+                            if(fDebug>1)LogPrint("hdac","Found asset follow-on script in tx %s\n",
                                     tx.GetHash().GetHex().c_str());                    
                         }
                     }
@@ -2673,7 +2673,7 @@ bool AcceptAssetGenesis(const CTransaction &tx,int offset,bool accept,string& re
                 }
             }
             
-            if(fDebug)LogPrint("hdac","Asset already exists. TxID: %s, AssetRef: %d-%d-%d, Name: %s\n",
+            if(fDebug>1)LogPrint("hdac","Asset already exists. TxID: %s, AssetRef: %d-%d-%d, Name: %s\n",
                     tx.GetHash().GetHex().c_str(),
                     mc_gState->m_Assets->m_Block+1,offset,(int)(*((unsigned char*)&txid+31))+256*(int)(*((unsigned char*)&txid+30)),
                     entity.GetName());                                        
@@ -2690,7 +2690,7 @@ bool AcceptAssetGenesis(const CTransaction &tx,int offset,bool accept,string& re
             {
                 if(new_issue)
                 {
-                    if(fDebug)LogPrint("hdac","New asset. TxID: %s, AssetRef: %d-%d-%d, Name: %s\n",
+                    if(fDebug>1)LogPrint("hdac","New asset. TxID: %s, AssetRef: %d-%d-%d, Name: %s\n",
                             tx.GetHash().GetHex().c_str(),
                             mc_gState->m_Assets->m_Block+1,offset,(int)(*((unsigned char*)&txid+0))+256*(int)(*((unsigned char*)&txid+1)),
                             this_entity.GetName());                                        
@@ -2699,7 +2699,7 @@ bool AcceptAssetGenesis(const CTransaction &tx,int offset,bool accept,string& re
                 {
                     uint256 otxid;
                     memcpy(&otxid,entity.GetTxID(),32);
-                    if(fDebug)LogPrint("hdac","Follow-on issue. TxID: %s,  Original issue txid: %s\n",
+                    if(fDebug>1)LogPrint("hdac","Follow-on issue. TxID: %s,  Original issue txid: %s\n",
                             tx.GetHash().GetHex().c_str(),otxid.GetHex().c_str());
                 }
             }
@@ -2957,7 +2957,7 @@ bool AcceptPermissionsAndCheckForDust(const CTransaction &tx,bool accept,string&
                                 address=CBitcoinAddress(*lpScriptID);
                                 ptr=(unsigned char*)(lpScriptID);
                             }
-                            if(fDebug)LogPrint("hdac","Found permission script in tx %s for %s - (%08x: %d - %d)\n",
+                            if(fDebug>1)LogPrint("hdac","Found permission script in tx %s for %s - (%08x: %d - %d)\n",
                                     tx.GetHash().GetHex().c_str(),
                                     address.ToString().c_str(),
                                     type, from, to);
@@ -3078,7 +3078,7 @@ exitlbl:
 
             if(!mc_gState->m_Permissions->CanConnect(NULL,seed_node->kAddrRemote.begin()))
             {
-                LogPrintf("hdac: Seed node lost connect permission \n");
+                if(fDebug>0)LogPrintf("hdac: Seed node lost connect permission \n");
                 mc_gState->m_pSeedNode=NULL;
             }
         }

@@ -200,6 +200,7 @@ Value getruntimeparams(const json_spirit::Array& params, bool fHelp)
     obj.push_back(Pair("datadir",mc_gState->m_Params->DataDir(0,0)));                    
     obj.push_back(Pair("debug",getparamstring("-debug")));   
  */ 
+    obj.push_back(Pair("debug",GetArg("-debug", 1)));   
     obj.push_back(Pair("port",GetListenPort()));   
     obj.push_back(Pair("reindex",GetBoolArg("-reindex",false)));                    
     obj.push_back(Pair("rescan",GetBoolArg("-rescan",false)));
@@ -215,7 +216,7 @@ Value getruntimeparams(const json_spirit::Array& params, bool fHelp)
     CPubKey pkey;            
     if(!pwalletMain->GetKeyFromAddressBook(pkey,MC_PTP_CONNECT))
     {
-        LogPrintf("hdac: Cannot find address having connect permission, trying default key\n");
+        if(fDebug>0)LogPrintf("hdac: Cannot find address having connect permission, trying default key\n");
         pkey=pwalletMain->vchDefaultKey;
     }
     keyID=pkey.GetID();    
@@ -228,7 +229,7 @@ Value getruntimeparams(const json_spirit::Array& params, bool fHelp)
     //obj.push_back(Pair("mineemptyrounds",Params().MineEmptyRounds()));                    
     //obj.push_back(Pair("miningturnover",Params().MiningTurnover()));                    
     //obj.push_back(Pair("lockadminminerounds",Params().LockAdminMineRounds()));                    
-    obj.push_back(Pair("gen",GetBoolArg("-gen", true)));                    
+    obj.push_back(Pair("gen",GetBoolArg("-gen", false)));                    
     obj.push_back(Pair("genproclimit",GetArg("-genproclimit", 1)));                    
 /*
     obj.push_back(Pair("shortoutput",GetBoolArg("-shortoutput",false)));                    
@@ -282,6 +283,37 @@ Value setruntimeparam(const json_spirit::Array& params, bool fHelp)
     
     string param_name=params[0].get_str();
     bool fFound=false;
+
+    if(param_name == "debug")
+    {
+
+        if( (params[1].type() == int_type) || (params[1].type() == str_type) )
+        {
+            int nValue;
+            if(params[1].type() == int_type)
+            {
+                nValue=params[1].get_int();
+            }
+            else
+            {
+                nValue=atoi(params[1].get_str().c_str());
+            }
+            
+            if( nValue >= 0 )
+            {
+                mapArgs ["-" + param_name]=strprintf("%d", nValue);
+                fFound=true;
+            }
+            else
+            {
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "Should be non-negative");                                                
+            }
+        }
+        else
+        {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type");
+        }        
+    }
     if(param_name == "miningrequirespeers")
     {
         mapArgs ["-" + param_name]=paramtobool(params[1],false) ? "1" : "0";

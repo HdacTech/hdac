@@ -56,12 +56,12 @@ Value createrawsendfrom(const Array& params, bool fHelp)
     entity.Zero();
     if(mc_gState->m_TmpAssetsOut->GetCount())
     {
-/*        
+        /*        
         if(mc_gState->m_TmpAssetsOut->GetCount() > 1)
         {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Follow-on script rejected - follow-on for several assets");                                    
         }        
- */ 
+        */ 
         if(!mc_gState->m_Assets->FindEntityByFullRef(&entity,mc_gState->m_TmpAssetsOut->GetRow(0)))
         {
             throw JSONRPCError(RPC_ENTITY_NOT_FOUND, "Follow-on script rejected - asset not found");                                                
@@ -116,7 +116,7 @@ Value createrawsendfrom(const Array& params, bool fHelp)
         int eErrorCode;
         if(!CreateAssetGroupingTransaction(pwalletMain, vecSend, rawTx, reservekey, nFeeRequired, strError, NULL, &thisFromAddresses, 1, -1, -1, NULL, flags, &eErrorCode))
         {
-            LogPrintf("createrawsendfrom : %s\n", strError);
+            if(fDebug>0)LogPrintf("createrawsendfrom : %s\n", strError);
             throw JSONRPCError(eErrorCode, strError);
         }
     }
@@ -175,7 +175,7 @@ Value createrawsendfrom(const Array& params, bool fHelp)
 
 Value sendfromaddress(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() < 3 || params.size() > 5)                        // MCHN 
+    if (fHelp || params.size() < 3 || params.size() > 6)
         throw runtime_error("Help message not found\n");
 
     CBitcoinAddress address(params[1].get_str());                               
@@ -268,12 +268,24 @@ Value sendfromaddress(const Array& params, bool fHelp)
         }        
     }
 
-    
+    bool fdeductfee = false;
+
+    if ((params.size() > 5) && (params[5].type() != null_type) && !params[5].get_str().empty())
+    {
+        if(params[5].get_str() == "true" || params[5].get_str() == "false")
+        {
+            if(params[5].get_str() == "true")
+                fdeductfee = true;
+        }
+        else
+        {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid value for 'subtractfeefromamount' parameter, should be boolean");
+        }
+    }
+
     EnsureWalletIsUnlocked();
     LOCK (pwalletMain->cs_wallet_send);
-    
-    SendMoneyToSeveralAddresses(addresses, nAmount, wtx, lpScript, CScript(), fromaddresses);
-    
+    SendMoneyToSeveralAddresses(addresses, nAmount, wtx, lpScript, CScript(), fromaddresses, fdeductfee);
     return wtx.GetHash().GetHex();
 }
 
@@ -415,9 +427,9 @@ Value sendwithmetadata(const Array& params, bool fHelp)
 
 Value sendtoaddress(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() < 2 || params.size() > 4)                        // MCHN 
+    if (fHelp || params.size() < 2 || params.size() > 5)
         throw runtime_error("Help message not found\n");
-
+  
     Array ext_params;
     ext_params.push_back("*");
     BOOST_FOREACH(const Value& value, params)
@@ -528,7 +540,7 @@ Value combineunspent(const Array& params, bool fHelp)
     if (pwalletMain->IsLocked())
     {
         strError = "Error: Wallet locked, unable to create transaction!";
-        LogPrintf("CombineUnspent() : %s", strError);
+        if(fDebug>0)LogPrintf("CombineUnspent() : %s", strError);
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, strError);
     }
 
@@ -570,7 +582,7 @@ Value combineunspent(const Array& params, bool fHelp)
     if(results.size() == 0)
     {
         strError="Not enough inputs";
-        LogPrintf("CombineUnspent() : %s\n", strError);
+        if(fDebug>0)LogPrintf("CombineUnspent() : %s\n", strError);
 //        throw JSONRPCError(RPC_WALLET_ERROR, strError);
     }
     
@@ -685,7 +697,7 @@ Value preparelockunspentfrom(const json_spirit::Array& params, bool fHelp)
                 if(memcmp((&pc1[0]),(&pc0[0]),script_size) == 0)
                 {
                     LOCK(pwalletMain->cs_wallet);
-                    if(fDebug)LogPrint("hdac","hdac: New lockunspent (%s,%d), Offer hash: %s\n",wtx.GetHash().GetHex().c_str(),j,offer_hash.GetHex().c_str());
+                    if(fDebug>1)LogPrint("hdac","hdac: New lockunspent (%s,%d), Offer hash: %s\n",wtx.GetHash().GetHex().c_str(),j,offer_hash.GetHex().c_str());
                     vout=j;                    
                 }
             }
@@ -800,7 +812,7 @@ Value preparelockunspent(const json_spirit::Array& params, bool fHelp)
                 if(memcmp((&pc1[0]),(&pc0[0]),script_size) == 0)
                 {
                     LOCK(pwalletMain->cs_wallet);
-                    if(fDebug)LogPrint("hdac","hdac: New lockunspent (%s,%d), Offer hash: %s\n",wtx.GetHash().GetHex().c_str(),j,offer_hash.GetHex().c_str());
+                    if(fDebug>1)LogPrint("hdac","hdac: New lockunspent (%s,%d), Offer hash: %s\n",wtx.GetHash().GetHex().c_str(),j,offer_hash.GetHex().c_str());
                     vout=j;                    
                     //pwalletMain->mapExchanges.insert(make_pair(COutPoint(wtx.GetHash(),j),CExchangeStatus(offer_hash,0,mc_TimeNowAsUInt())));                    
                 }

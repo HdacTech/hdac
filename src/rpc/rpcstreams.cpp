@@ -387,9 +387,11 @@ Value createstreamfromcmd(const Array& params, bool fHelp)
     
     
     EnsureWalletIsUnlocked();
-    LOCK (pwalletMain->cs_wallet_send);
-    
-    SendMoneyToSeveralAddresses(addresses, 0, wtx, lpScript, scriptOpReturn,fromaddresses);
+    {
+        LOCK (pwalletMain->cs_wallet_send);
+        
+        SendMoneyToSeveralAddresses(addresses, 0, wtx, lpScript, scriptOpReturn,fromaddresses);
+    }
 
     return wtx.GetHash().GetHex();    
 }

@@ -49,7 +49,7 @@ Value GetNetworkHashPS(int lookup, int height) {
 
     // If lookup is -1, then use blocks since last difficulty change.
     if (lookup <= 0)
-        lookup = pb->nHeight % 2016 + 1;
+        lookup = pb->nHeight % Params().Interval() + 1;
 
     // If lookup is larger than chain, then set it to chain length.
     if (lookup > pb->nHeight)
@@ -89,7 +89,7 @@ Value getgenerate(const Array& params, bool fHelp)
     if (fHelp || params.size() != 0)
         throw runtime_error("Help message not found\n");
 
-    return GetBoolArg("-gen", true);
+    return GetBoolArg("-gen", false);
 }
 
 
@@ -199,7 +199,7 @@ Value setgenerate(const Array& params, bool fHelp)
                 ++pblock->nNonce;
             }
             CValidationState state;
-            LogPrintf("RPC Miner      : Block Found - %s, prev: %s, height: %d, txs: %d\n",
+            if(fDebug>0)LogPrintf("RPC Miner      : Block Found - %s, prev: %s, height: %d, txs: %d\n",
                     pblock->GetHash().GetHex(),pblock->hashPrevBlock.ToString().c_str(),nHeight+1,(int)pblock->vtx.size());
             if (!ProcessNewBlock(state, NULL, pblock))
                 throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");

@@ -327,7 +327,7 @@ Value importwallet(const Array& params, bool fHelp)
         assert(key.VerifyPubKey(pubkey));
         CKeyID keyid = pubkey.GetID();
         if (pwalletMain->HaveKey(keyid)) {
-            LogPrintf("Skipping import of %s (key already present)\n", CBitcoinAddress(keyid).ToString());
+            if(fDebug>0)LogPrintf("Skipping import of %s (key already present)\n", CBitcoinAddress(keyid).ToString());
             continue;
         }
         int64_t nTime = DecodeDumpTime(vstr[1]);
@@ -345,7 +345,7 @@ Value importwallet(const Array& params, bool fHelp)
                 fLabel = true;
             }
         }
-        LogPrintf("Importing %s...\n", CBitcoinAddress(keyid).ToString());
+        if(fDebug>0)LogPrintf("Importing %s...\n", CBitcoinAddress(keyid).ToString());
         if (!pwalletMain->AddKeyPubKey(key, pubkey)) {
             fGood = false;
             continue;
@@ -380,13 +380,13 @@ Value importwallet(const Array& params, bool fHelp)
 
     if(mc_gState->m_WalletMode & MC_WMD_ADDRESS_TXS)
     {
-        LogPrintf("Rescanning all %i blocks\n", chainActive.Height());
+        if(fDebug>0)LogPrintf("Rescanning all %i blocks\n", chainActive.Height());
         pwalletMain->ScanForWalletTransactions(chainActive.Genesis(),false,true);
         pwalletMain->MarkDirty();        
     }
     else
     {
-        LogPrintf("Rescanning last %i blocks\n", chainActive.Height() - pindex->nHeight + 1);
+        if(fDebug>0)LogPrintf("Rescanning last %i blocks\n", chainActive.Height() - pindex->nHeight + 1);
         pwalletMain->ScanForWalletTransactions(pindex,false,true);
         pwalletMain->MarkDirty();
     }

@@ -136,7 +136,7 @@ public:
             return CCoinsViewBacked::GetCoins(txid, coins);
         } catch(const std::runtime_error& e) {
             uiInterface.ThreadSafeMessageBox(_("Error reading from database, shutting down."), "", CClientUIInterface::MSG_ERROR);
-            LogPrintf("Error reading from database: %s\n", e.what());
+            if(fDebug>0)LogPrintf("Error reading from database: %s\n", e.what());
             // Starting the shutdown sequence and returning false to the caller would be
             // interpreted as 'entry not found' (as opposed to unable to read data), and
             // could lead to invalid interpration. Just exit immediately, as we can't
@@ -153,7 +153,7 @@ static boost::scoped_ptr<ECCVerifyHandle> globalVerifyHandle;
 
 void Shutdown()
 {
-    LogPrintf("%s: In progress...\n", __func__);
+    if(fDebug>0)LogPrintf("%s: In progress...\n", __func__);
     static CCriticalSection cs_Shutdown;
     TRY_LOCK(cs_Shutdown, lockShutdown);
     if (!lockShutdown)
@@ -181,7 +181,7 @@ void Shutdown()
         if (!est_fileout.IsNull())
             mempool.WriteFeeEstimates(est_fileout);
         else
-            LogPrintf("%s: Failed to write fee estimates to %s\n", __func__, est_path.string());
+            if(fDebug>0)LogPrintf("%s: Failed to write fee estimates to %s\n", __func__, est_path.string());
         fFeeEstimatesInitialized = false;
     }
 
@@ -219,7 +219,7 @@ void Shutdown()
 #endif
     globalVerifyHandle.reset();
     ECC_Stop();
-    LogPrintf("%s: done\n", __func__);
+    if(fDebug>0)LogPrintf("%s: done\n", __func__);
     fShutdownCompleted = true;
 }
 
@@ -406,15 +406,19 @@ std::string HelpMessage(HelpMessageMode mode)                                   
         strUsage += "  -flushwallet           " + strprintf(_("Run a thread to flush wallet periodically (default: %u)"), 1) + "\n";
         strUsage += "  -stopafterblockimport  " + strprintf(_("Stop running after importing blocks from disk (default: %u)"), 0) + "\n";
     }
-    strUsage += "  -debug=<category>      " + strprintf(_("Output debugging information (default: %u, supplying <category> is optional)"), 0) + "\n";
-    strUsage += "                         " + _("If <category> is not supplied, output all debugging information.") + "\n";
-    strUsage += "                         " + _("<category> can be:");
-    strUsage +=                                 " addrman, alert, bench, coindb, db, lock, rand, rpc, selectcoins, mempool, net"; // Don't translate these and qt below
+    strUsage += "  -debug=<level>      " + strprintf(_("Output debugging information (default: %u)"), 1) + "\n";
+    strUsage += "                         " + _("<level> can be: 0 - 5") + "\n";
+    strUsage += "                         " + _("0 : disabled debugging logs") + "\n";
+    strUsage += "                         " + _("1 : + default logs") + "\n";
+    strUsage += "                         " + _("2 : + Detailed logs of tx and block") + "\n";
+    strUsage += "                         " + _("3 : + coin view logs") + "\n";
+    strUsage += "                         " + _("4 : + network logs") + "\n";
+    strUsage += "                         " + _("5 : + RPC api logs (all logs)") + "\n";
     if (mode == HMM_BITCOIN_QT)
         strUsage += ", qt";
     strUsage += ".\n";
 #ifdef ENABLE_WALLET
-    strUsage += "  -gen                   " + strprintf(_("Generate coins (default: %u)"), 1) + "\n";
+    strUsage += "  -gen                   " + strprintf(_("Generate coins (default: %u)"), 0) + "\n";
     strUsage += "  -genproclimit=<n>      " + strprintf(_("Set the number of threads for coin generation if enabled (-1 = all cores, default: %d)"), 1) + "\n";
 #endif
     strUsage += "  -help-debug            " + _("Show all debugging options (usage: --help -help-debug)") + "\n";
@@ -536,13 +540,13 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
             FILE *file = OpenBlockFile(pos, true);
             if (!file)
                 break; // This error is logged in OpenBlockFile
-            LogPrintf("Reindexing block file blk%05u.dat...\n", (unsigned int)nFile);
+            if(fDebug>0)LogPrintf("Reindexing block file blk%05u.dat...\n", (unsigned int)nFile);
             LoadExternalBlockFile(file, &pos);
             nFile++;
         }
         pblocktree->WriteReindexing(false);
         fReindex = false;
-        LogPrintf("Reindexing finished\n");
+        if(fDebug>0)LogPrintf("Reindexing finished\n");
         // To avoid ending up in a situation without genesis block, re-try initializing (no-op if reindexing worked):
         InitBlockIndex();
     }
@@ -554,11 +558,11 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
         if (file) {
             CImportingNow imp;
             filesystem::path pathBootstrapOld = GetDataDir() / "bootstrap.dat.old";
-            LogPrintf("Importing bootstrap.dat...\n");
+            if(fDebug>0)LogPrintf("Importing bootstrap.dat...\n");
             LoadExternalBlockFile(file);
             RenameOver(pathBootstrap, pathBootstrapOld);
         } else {
-            LogPrintf("Warning: Could not open bootstrap file %s\n", pathBootstrap.string());
+            if(fDebug>0)LogPrintf("Warning: Could not open bootstrap file %s\n", pathBootstrap.string());
         }
     }
 
@@ -567,15 +571,15 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
         FILE *file = fopen(path.string().c_str(), "rb");
         if (file) {
             CImportingNow imp;
-            LogPrintf("Importing blocks file %s...\n", path.string());
+            if(fDebug>0)LogPrintf("Importing blocks file %s...\n", path.string());
             LoadExternalBlockFile(file);
         } else {
-            LogPrintf("Warning: Could not open blocks file %s\n", path.string());
+            if(fDebug>0)LogPrintf("Warning: Could not open blocks file %s\n", path.string());
         }
     }
 
     if (GetBoolArg("-stopafterblockimport", false)) {
-        LogPrintf("Stopping after block import\n");
+        if(fDebug>0)LogPrintf("Stopping after block import\n");
         StartShutdown();
     }
 }
@@ -671,13 +675,16 @@ bool AppInitAsParams()
     }
     #endif // ENABLE_WALLET
 
-    LogPrintf("[AppInitAsParams] : minFee = %d, minRelayTxFee=%s, minTxFee=%s \n", minFee, ::minRelayTxFee.ToString(), CWallet::minTxFee.ToString());
-    if(COIN > 0)LogPrintf("[AppInitAsParams] : payTxFee = %s, maxTxFee=%d \n", payTxFee.ToString(), maxTxFee/COIN);
+    if(fDebug>0)LogPrintf("[AppInitAsParams] : minFee = %d, minRelayTxFee=%s, minTxFee=%s \n", minFee, ::minRelayTxFee.ToString(), CWallet::minTxFee.ToString());
+    if(COIN > 0)
+    {
+        if(fDebug>0)LogPrintf("[AppInitAsParams] : payTxFee = %s, maxTxFee=%d \n", payTxFee.ToString(), maxTxFee/COIN);
+    }
 
     MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
     MAX_TX_SIGOPS = MAX_BLOCK_SIGOPS/5;
 
-    LogPrintf("[AppInitAsParams] : MAX_BLOCK_SIZE=%d, MAX_BLOCK_SIGOPS=%d, MAX_TX_SIGOPS=%d \n", MAX_BLOCK_SIZE, MAX_BLOCK_SIGOPS, MAX_TX_SIGOPS);
+    if(fDebug>0)LogPrintf("[AppInitAsParams] : MAX_BLOCK_SIZE=%d, MAX_BLOCK_SIGOPS=%d, MAX_TX_SIGOPS=%d \n", MAX_BLOCK_SIZE, MAX_BLOCK_SIGOPS, MAX_TX_SIGOPS);
 
     return true;
 }
@@ -795,6 +802,12 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
 #endif
 
     // ********************************************************* Step 2: parameter interactions
+    fDebug = GetArg("-debug", 1);
+    
+    // Special-case: if -debug=0/-nodebug is set, turn off debugging messages
+    if (GetBoolArg("-nodebug", false))
+        fDebug = 0;
+        
     // Set this early so that parameter interactions go to console
     fPrintToConsole = GetBoolArg("-printtoconsole", false);
     fLogTimestamps = GetBoolArg("-logtimestamps", true);
@@ -805,53 +818,53 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
         // when specifying an explicit binding address, you want to listen on it
         // even when -connect or -proxy is specified
         if (SoftSetBoolArg("-listen", true))
-            LogPrintf("AppInit2 : parameter interaction: -bind or -whitebind set -> setting -listen=1\n");
+            if(fDebug>0)LogPrintf("AppInit2 : parameter interaction: -bind or -whitebind set -> setting -listen=1\n");
     }
 
     if (mapArgs.count("-connect") && mapMultiArgs["-connect"].size() > 0) {
         // when only connecting to trusted nodes, do not seed via DNS, or listen by default
         if (SoftSetBoolArg("-dnsseed", false))
-            LogPrintf("AppInit2 : parameter interaction: -connect set -> setting -dnsseed=0\n");
+            if(fDebug>0)LogPrintf("AppInit2 : parameter interaction: -connect set -> setting -dnsseed=0\n");
         if (SoftSetBoolArg("-listen", false))
-            LogPrintf("AppInit2 : parameter interaction: -connect set -> setting -listen=0\n");
+            if(fDebug>0)LogPrintf("AppInit2 : parameter interaction: -connect set -> setting -listen=0\n");
     }
 
     if (mapArgs.count("-proxy")) {
         // to protect privacy, do not listen by default if a default proxy server is specified
         if (SoftSetBoolArg("-listen", false))
-            LogPrintf("AppInit2 : parameter interaction: -proxy set -> setting -listen=0\n");
+            if(fDebug>0)LogPrintf("AppInit2 : parameter interaction: -proxy set -> setting -listen=0\n");
         // to protect privacy, do not discover addresses by default
         if (SoftSetBoolArg("-discover", false))
-            LogPrintf("AppInit2 : parameter interaction: -proxy set -> setting -discover=0\n");
+            if(fDebug>0)LogPrintf("AppInit2 : parameter interaction: -proxy set -> setting -discover=0\n");
     }
 
     if (!GetBoolArg("-listen", true)) {
         // do not map ports or try to retrieve public IP when not listening (pointless)
 /*        
         if (SoftSetBoolArg("-upnp", false))
-            LogPrintf("AppInit2 : parameter interaction: -listen=0 -> setting -upnp=0\n");
+            if(fDebug>0)LogPrintf("AppInit2 : parameter interaction: -listen=0 -> setting -upnp=0\n");
  */ 
         mapArgs["-upnp"] = std::string("0");
         if (SoftSetBoolArg("-discover", false))
-            LogPrintf("AppInit2 : parameter interaction: -listen=0 -> setting -discover=0\n");
+            if(fDebug>0)LogPrintf("AppInit2 : parameter interaction: -listen=0 -> setting -discover=0\n");
     }
 
     if (mapArgs.count("-externalip")) {
         // if an explicit public IP is specified, do not try to find others
         if (SoftSetBoolArg("-discover", false))
-            LogPrintf("AppInit2 : parameter interaction: -externalip set -> setting -discover=0\n");
+            if(fDebug>0)LogPrintf("AppInit2 : parameter interaction: -externalip set -> setting -discover=0\n");
     }
 
     if (GetBoolArg("-salvagewallet", false)) {
         // Rewrite just private keys: rescan to find transactions
         if (SoftSetBoolArg("-rescan", true))
-            LogPrintf("AppInit2 : parameter interaction: -salvagewallet=1 -> setting -rescan=1\n");
+            if(fDebug>0)LogPrintf("AppInit2 : parameter interaction: -salvagewallet=1 -> setting -rescan=1\n");
     }
 
     // -zapwallettx implies a rescan
     if (GetBoolArg("-zapwallettxes", false)) {
         if (SoftSetBoolArg("-rescan", true))
-            LogPrintf("AppInit2 : parameter interaction: -zapwallettxes=<mode> -> setting -rescan=1\n");
+            if(fDebug>0)LogPrintf("AppInit2 : parameter interaction: -zapwallettxes=<mode> -> setting -rescan=1\n");
     }
 
     // Make sure enough file descriptors are available
@@ -866,15 +879,9 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
 
     // ********************************************************* Step 3: parameter-to-internal-flags
 
-    fDebug = !mapMultiArgs["-debug"].empty();
-    // Special-case: if -debug=0/-nodebug is set, turn off debugging messages
-    const vector<string>& categories = mapMultiArgs["-debug"];
-    if (GetBoolArg("-nodebug", false) || find(categories.begin(), categories.end(), string("0")) != categories.end())
-        fDebug = false;
-
     // Check for -debugnet
-    if (GetBoolArg("-debugnet", false))
-        InitWarning(_("Warning: Unsupported argument -debugnet ignored, use -debug=net."));
+    //if (GetBoolArg("-debugnet", false))
+    //    InitWarning(_("Warning: Unsupported argument -debugnet ignored, use -debug=net."));
     // Check for -socks - as this is a privacy risk to continue, exit here
     if (mapArgs.count("-socks"))
         return InitError(_("Error: Unsupported argument -socks found. Setting SOCKS version isn't possible anymore, only SOCKS5 proxies are supported."));
@@ -919,7 +926,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
     // a transaction spammer can cheaply fill blocks using
     // 1-satoshi-fee transactions. It should be set above the real
     // cost to you of processing a transaction.
-    LogPrintf("[AppInit2] : MAX_BLOCK_SIZE=%d, MAX_BLOCK_SIGOPS=%d, MAX_TX_SIGOPS=%d \n", MAX_BLOCK_SIZE, MAX_BLOCK_SIGOPS, MAX_TX_SIGOPS);
+    if(fDebug>0)LogPrintf("[AppInit2] : MAX_BLOCK_SIZE=%d, MAX_BLOCK_SIGOPS=%d, MAX_TX_SIGOPS=%d \n", MAX_BLOCK_SIZE, MAX_BLOCK_SIGOPS, MAX_TX_SIGOPS);
     
     ::minRelayTxFee = CFeeRate(MIN_RELAY_TX_FEE);    
     
@@ -991,7 +998,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
         return InitError(_("Initialization sanity check failed. Hdac Core is shutting down."));	// HDAC
 
     std::string strDataDir = GetDataDir().string();
-    LogPrint("hdac","hdac: Data directory: %s\n",strDataDir.c_str());
+    if(fDebug>1)LogPrint("hdac","hdac: Data directory: %s\n",strDataDir.c_str());
 #ifdef ENABLE_WALLET
     // Wallet file must be a plain filename without a directory
     if (strWalletFile != boost::filesystem::basename(strWalletFile) + boost::filesystem::extension(strWalletFile))
@@ -1015,22 +1022,22 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
 #endif
     if (GetBoolArg("-shrinkdebugfile", !fDebug))
         ShrinkDebugFile();
-    LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-    LogPrintf("Hdac version %s (%s)\n", mc_gState->GetFullVersion(), CLIENT_DATE);
+    if(fDebug>0)LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    if(fDebug>0)LogPrintf("Hdac version %s (%s)\n", mc_gState->GetFullVersion(), CLIENT_DATE);
 
-    LogPrintf("Using OpenSSL version %s\n", SSLeay_version(SSLEAY_VERSION));
+    if(fDebug>0)LogPrintf("Using OpenSSL version %s\n", SSLeay_version(SSLEAY_VERSION));
 #ifdef ENABLE_WALLET
-    LogPrintf("Using BerkeleyDB version %s\n", DbEnv::version(0, 0, 0));
+    if(fDebug>0)LogPrintf("Using BerkeleyDB version %s\n", DbEnv::version(0, 0, 0));
 #endif
     if (!fLogTimestamps)
         LogPrintf("Startup time: %s\n", DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()));
-    LogPrintf("Default data directory %s\n", GetDefaultDataDir().string());
-    LogPrintf("Using data directory %s\n", strDataDir);
-    LogPrintf("Using config file %s\n", GetConfigFile().string());
-    LogPrintf("Using at most %i connections (%i file descriptors available)\n", nMaxConnections, nFD);
+    if(fDebug>0)LogPrintf("Default data directory %s\n", GetDefaultDataDir().string());
+    if(fDebug>0)LogPrintf("Using data directory %s\n", strDataDir);
+    if(fDebug>0)LogPrintf("Using config file %s\n", GetConfigFile().string());
+    if(fDebug>0)LogPrintf("Using at most %i connections (%i file descriptors available)\n", nMaxConnections, nFD);
     std::ostringstream strErrors;
 
-    LogPrintf("Using %u threads for script verification\n", nScriptCheckThreads);
+    if(fDebug>0)LogPrintf("Using %u threads for script verification\n", nScriptCheckThreads);
     
     if(!GetBoolArg("-offline",false))
     {    
@@ -1058,7 +1065,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
     // ********************************************************* Step 5: verify wallet database integrity
 #ifdef ENABLE_WALLET
     if (!fDisableWallet) {
-        LogPrintf("Using wallet %s\n", strWalletFile);
+        if(fDebug>0)LogPrintf("Using wallet %s\n", strWalletFile);
         uiInterface.InitMessage(_("Verifying wallet..."));
 
         if (!bitdb.Open(GetDataDir()))
@@ -1068,7 +1075,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
             boost::filesystem::path pathDatabaseBak = GetDataDir() / strprintf("database.%d.bak", GetTime());
             try {
                 boost::filesystem::rename(pathDatabase, pathDatabaseBak);
-                LogPrintf("Moved old %s to %s. Retrying.\n", pathDatabase.string(), pathDatabaseBak.string());
+                if(fDebug>0)LogPrintf("Moved old %s to %s. Retrying.\n", pathDatabase.string(), pathDatabaseBak.string());
             } catch(boost::filesystem::filesystem_error &error) {
                  // failure is ok (well, not really, but it's not worse than what we started with)
             }
@@ -1139,11 +1146,11 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
         {
             if(init_privkey.size())
             {
-                LogPrintf("hdac: Default key is specified using -initprivkey - not created\n");                
+                if(fDebug>0)LogPrintf("hdac: Default key is specified using -initprivkey - not created\n");                
             }
             else
             {
-                LogPrintf("hdac: Default key is not found - creating new... \n");
+                if(fDebug>0)LogPrintf("hdac: Default key is not found - creating new... \n");
                 // Create new keyUser and set as default key
                 //RandAddSeedPerfmon();
 
@@ -1158,7 +1165,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
         {
             if(init_privkey.size())
             {
-                LogPrintf("hdac: Wallet already has default key, -initprivkey is ignored\n");                
+                if(fDebug>0)LogPrintf("hdac: Wallet already has default key, -initprivkey is ignored\n");                
                 if(!GetBoolArg("-shortoutput", false))
                 {    
                     sprintf(bufOutput,"Wallet already has default key, -initprivkey is ignored\n\n");
@@ -1230,7 +1237,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
                 }
             }
 
-            LogPrintf("hdac: Parameter set is not complete - starting paramset discovery thread...\n");
+            if(fDebug>0)LogPrintf("hdac: Parameter set is not complete - starting paramset discovery thread...\n");
             boost::thread_group seedThreadGroup;
 
             mc_gState->m_NetworkState=MC_NTS_WAITING_FOR_SEED;
@@ -1312,7 +1319,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
                 }
             }
             
-            LogPrintf("hdac: Exited from paramset discovery thread\n");        
+            if(fDebug>0)LogPrintf("hdac: Exited from paramset discovery thread\n");        
 
             if(mc_gState->m_NetworkParams->m_Status == MC_PRM_STATUS_VALID)
             {
@@ -1346,7 +1353,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
                 const unsigned char *pubKey=pwalletMain->vchDefaultKey.begin();
                 int pubKeySize=pwalletMain->vchDefaultKey.size();
 
-                LogPrintf("hdac: Parameter set is new, THIS IS GENESIS NODE - looking for genesis block...\n");
+                if(fDebug>0)LogPrintf("hdac: Parameter set is new, THIS IS GENESIS NODE - looking for genesis block...\n");
                 if(!GetBoolArg("-shortoutput", false))
                 {    
                     sprintf(bufOutput,"Looking for genesis block...\n");
@@ -1363,7 +1370,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
                   return false;
                 }
                
-                LogPrintf("hdac: Genesis block found\n");
+                if(fDebug>0)LogPrintf("hdac: Genesis block found\n");
                 if(!GetBoolArg("-shortoutput", false))
                 {    
                     sprintf(bufOutput,"Genesis block found\n\n");
@@ -1401,7 +1408,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
 
     if(mc_gState->m_NetworkParams->m_Status == MC_PRM_STATUS_VALID)
     {
-        LogPrintf("hdac: Parameter set is valid - initializing blockchain parameters...\n");
+        if(fDebug>0)LogPrintf("hdac: Parameter set is valid - initializing blockchain parameters...\n");
         
         mc_gState->m_NetworkParams->SetGlobals();
         InitializeHdacParams();        
@@ -1576,8 +1583,8 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
                 }        
             }
         }
-        LogPrint("mcblockperf","mchn-block-perf: Wallet initialization completed (%s)\n",(mc_gState->m_WalletMode & MC_WMD_TXS) ? pwalletTxsMain->Summary() : "");
-        LogPrintf("Wallet mode: %08X\n",mc_gState->m_WalletMode);
+        if(fDebug>0)LogPrint("mcblockperf","mchn-block-perf: Wallet initialization completed (%s)\n",(mc_gState->m_WalletMode & MC_WMD_TXS) ? pwalletTxsMain->Summary() : "");
+        if(fDebug>0)LogPrintf("Wallet mode: %08X\n",mc_gState->m_WalletMode);
         if(mc_gState->m_WalletMode & MC_WMD_ADDRESS_TXS)
         {
             if(GetBoolArg("-zapwallettxes", false) && !GetBoolArg("-reindex", false))
@@ -1600,11 +1607,11 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
             {
                 if(init_privkey.size())
                 {
-                    LogPrintf("hdac: Default key is specified using -initprivkey - not created\n");                
+                    if(fDebug>0)LogPrintf("hdac: Default key is specified using -initprivkey - not created\n");                
                 }
                 else
                 {
-                    LogPrintf("hdac: Default key is not found - creating new... \n");
+                    if(fDebug>0)LogPrintf("hdac: Default key is not found - creating new... \n");
                     // Create new keyUser and set as default key
                     //RandAddSeedPerfmon();
 
@@ -1619,7 +1626,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
             {
                 if(init_privkey.size())
                 {
-                    LogPrintf("hdac: Wallet already has default key, -initprivkey is ignored\n");                
+                    if(fDebug>0)LogPrintf("hdac: Wallet already has default key, -initprivkey is ignored\n");                
                     if(!GetBoolArg("-shortoutput", false))
                     {    
                         sprintf(bufOutput,"Wallet already has default key, -initprivkey is ignored\n\n");
@@ -1704,35 +1711,35 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
             CPubKey pkey;
             if(pwalletMain->GetKeyFromAddressBook(pkey,MC_PTP_CONNECT))
             {
-                LogPrint("hdac","hdac: Default connect  address: %s\n",CBitcoinAddress(pkey.GetID()).ToString().c_str());                
+                if(fDebug>1)LogPrint("hdac","hdac: Default connect  address: %s\n",CBitcoinAddress(pkey.GetID()).ToString().c_str());                
             }
             if(pwalletMain->GetKeyFromAddressBook(pkey,MC_PTP_SEND))
             {
-                LogPrint("hdac","hdac: Default send     address: %s\n",CBitcoinAddress(pkey.GetID()).ToString().c_str());                
+                if(fDebug>1)LogPrint("hdac","hdac: Default send     address: %s\n",CBitcoinAddress(pkey.GetID()).ToString().c_str());                
             }
             if(pwalletMain->GetKeyFromAddressBook(pkey,MC_PTP_RECEIVE))
             {
-                LogPrint("hdac","hdac: Default receive  address: %s\n",CBitcoinAddress(pkey.GetID()).ToString().c_str());                
+                if(fDebug>1)LogPrint("hdac","hdac: Default receive  address: %s\n",CBitcoinAddress(pkey.GetID()).ToString().c_str());                
             }
             if(pwalletMain->GetKeyFromAddressBook(pkey,MC_PTP_CREATE))
             {
-                LogPrint("hdac","hdac: Default create   address: %s\n",CBitcoinAddress(pkey.GetID()).ToString().c_str());                
+                if(fDebug>1)LogPrint("hdac","hdac: Default create   address: %s\n",CBitcoinAddress(pkey.GetID()).ToString().c_str());                
             }
             if(pwalletMain->GetKeyFromAddressBook(pkey,MC_PTP_ISSUE))
             {
-                LogPrint("hdac","hdac: Default issue    address: %s\n",CBitcoinAddress(pkey.GetID()).ToString().c_str());                
+                if(fDebug>1)LogPrint("hdac","hdac: Default issue    address: %s\n",CBitcoinAddress(pkey.GetID()).ToString().c_str());                
             }
             if(pwalletMain->GetKeyFromAddressBook(pkey,MC_PTP_MINE))
             {
-                LogPrint("hdac","hdac: Default mine     address: %s\n",CBitcoinAddress(pkey.GetID()).ToString().c_str());                
+                if(fDebug>1)LogPrint("hdac","hdac: Default mine     address: %s\n",CBitcoinAddress(pkey.GetID()).ToString().c_str());                
             }
             if(pwalletMain->GetKeyFromAddressBook(pkey,MC_PTP_ADMIN))
             {
-                LogPrint("hdac","hdac: Default admin    address: %s\n",CBitcoinAddress(pkey.GetID()).ToString().c_str());                
+                if(fDebug>1)LogPrint("hdac","hdac: Default admin    address: %s\n",CBitcoinAddress(pkey.GetID()).ToString().c_str());                
             }
             if(pwalletMain->GetKeyFromAddressBook(pkey,MC_PTP_ACTIVATE))
             {
-                LogPrint("hdac","hdac: Default activate address: %s\n",CBitcoinAddress(pkey.GetID()).ToString().c_str());                
+                if(fDebug>1)LogPrint("hdac","hdac: Default activate address: %s\n",CBitcoinAddress(pkey.GetID()).ToString().c_str());                
             }
 
             if(!firstAttemp_Empty && ParamsRecover(OutputPipe))
@@ -1786,7 +1793,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
                 }
                 if(pwalletMain->vchDefaultKey.IsValid())
                 {
-                    LogPrintf("hdac: Minimal blockchain parameter set is created, default address: %s\n",
+                    if(fDebug>0)LogPrintf("hdac: Minimal blockchain parameter set is created, default address: %s\n",
                             CBitcoinAddress(pwalletMain->vchDefaultKey.GetID()).ToString().c_str());
                     if(fFirstRunForBuild)
                     {
@@ -1825,7 +1832,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
     }
     
     mc_gState->m_NodePausedState=GetArg("-paused",0);
-    LogPrintf("Node paused state is set to %08X\n",mc_gState->m_NodePausedState);
+    if(fDebug>0)LogPrintf("Node paused state is set to %08X\n",mc_gState->m_NodePausedState);
     
     pwalletMain=NULL;
 
@@ -2062,12 +2069,12 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
             filesystem::path dest = blocksDir / strprintf("blk%05u.dat", i-1);
             try {
                 filesystem::create_hard_link(source, dest);
-                LogPrintf("Hardlinked %s -> %s\n", source.string(), dest.string());
+                if(fDebug>0)LogPrintf("Hardlinked %s -> %s\n", source.string(), dest.string());
                 linked = true;
             } catch (filesystem::filesystem_error & e) {
                 // Note: hardlink creation failing is not a disaster, it just means
                 // blocks will get re-downloaded from peers.
-                LogPrintf("Error hardlinking blk%04u.dat : %s\n", i, e.what());
+                if(fDebug>0)LogPrintf("Error hardlinking blk%04u.dat : %s\n", i, e.what());
                 break;
             }
         }
@@ -2170,7 +2177,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
                     break;
                 }
             } catch(std::exception &e) {
-                if (fDebug) LogPrintf("%s\n", e.what());
+                if (fDebug>1) LogPrintf("%s\n", e.what());
                 strLoadError = _("Error opening block database");
                 break;
             }
@@ -2189,7 +2196,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
                     fReindex = true;
                     fRequestShutdown = false;
                 } else {
-                    LogPrintf("Aborted block database rebuild. Exiting.\n");
+                    if(fDebug>0)LogPrintf("Aborted block database rebuild. Exiting.\n");
                     return false;
                 }
             } else {
@@ -2204,10 +2211,10 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
     // As the program has not fully started yet, Shutdown() is possibly overkill.
     if (fRequestShutdown)
     {
-        LogPrintf("Shutdown requested. Exiting.\n");
+        if(fDebug>0)LogPrintf("Shutdown requested. Exiting.\n");
         return false;
     }
-    LogPrintf(" block index %15dms\n", GetTimeMillis() - nStart);
+    if(fDebug>0)LogPrintf(" block index %15dms\n", GetTimeMillis() - nStart);
 
     boost::filesystem::path est_path = GetDataDir() / FEE_ESTIMATES_FILENAME;
     CAutoFile est_filein(fopen(est_path.string().c_str(), "rb"), SER_DISK, CLIENT_VERSION);
@@ -2224,7 +2231,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
 
     //int version=mc_gState->m_NetworkParams->GetInt64Param("protocolversion");
     int version=mc_gState->m_NetworkParams->ProtocolVersion();
-    LogPrintf("Hdac protocol version: %d\n",version);	// HDAC
+    if(fDebug>0)LogPrintf("Hdac protocol version: %d\n",version);	// HDAC
     if(version != mc_gState->GetProtocolVersion())
     {
         if(!GetBoolArg("-shortoutput", false))
@@ -2248,7 +2255,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
 #ifdef ENABLE_WALLET
     if (fDisableWallet) {
         pwalletMain = NULL;
-        LogPrintf("Wallet disabled!\n");
+        if(fDebug>0)LogPrintf("Wallet disabled!\n");
     } else {
 
         // needed to restore wallet transaction meta data after -zapwallettxes
@@ -2289,7 +2296,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
             else if (nLoadWalletRet == DB_NEED_REWRITE)                         // MCHN
             {
                 strErrors << _("Wallet needed to be rewritten: restart Hdac Core to complete") << "\n";	// HDAC
-                LogPrintf("%s", strErrors.str());
+                if(fDebug>0)LogPrintf("%s", strErrors.str());
                 return InitError(strErrors.str());
             }
             else
@@ -2301,12 +2308,12 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
             int nMaxVersion = GetArg("-upgradewallet", 0);
             if (nMaxVersion == 0) // the -upgradewallet without argument case
             {
-                LogPrintf("Performing wallet upgrade to %i\n", FEATURE_LATEST);
+                if(fDebug>0)LogPrintf("Performing wallet upgrade to %i\n", FEATURE_LATEST);
                 nMaxVersion = CLIENT_VERSION;
                 pwalletMain->SetMinVersion(FEATURE_LATEST); // permanently upgrade the wallet immediately
             }
             else
-                LogPrintf("Allowing wallet upgrade up to %i\n", nMaxVersion);
+                if(fDebug>0)LogPrintf("Allowing wallet upgrade up to %i\n", nMaxVersion);
             if (nMaxVersion < pwalletMain->GetVersion())
                 strErrors << _("Cannot downgrade wallet") << "\n";
             pwalletMain->SetMaxVersion(nMaxVersion);
@@ -2328,8 +2335,8 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
             pwalletMain->SetBestChain(chainActive.GetLocator());
         }
         
-        LogPrintf("%s", strErrors.str());
-        LogPrintf(" wallet      %15dms\n", GetTimeMillis() - nStart);
+        if(fDebug>0)LogPrintf("%s", strErrors.str());
+        if(fDebug>0)LogPrintf(" wallet      %15dms\n", GetTimeMillis() - nStart);
 
         RegisterValidationInterface(pwalletMain);
 
@@ -2354,10 +2361,10 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
         if (chainActive.Tip() && chainActive.Tip() != pindexRescan)
         {
             uiInterface.InitMessage(_("Rescanning..."));
-            LogPrintf("Rescanning last %i blocks (from block %i)...\n", chainActive.Height() - pindexRescan->nHeight, pindexRescan->nHeight);
+            if(fDebug>0)LogPrintf("Rescanning last %i blocks (from block %i)...\n", chainActive.Height() - pindexRescan->nHeight, pindexRescan->nHeight);
             nStart = GetTimeMillis();
             pwalletMain->ScanForWalletTransactions(pindexRescan, true, false);
-            LogPrintf(" rescan      %15dms\n", GetTimeMillis() - nStart);
+            if(fDebug>0)LogPrintf(" rescan      %15dms\n", GetTimeMillis() - nStart);
             pwalletMain->SetBestChain(chainActive.GetLocator());
             nWalletDBUpdated++;
 
@@ -2402,7 +2409,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
     
     } // (!fDisableWallet)
 #else // ENABLE_WALLET
-    LogPrintf("No wallet compiled in!\n");
+    if(fDebug>0)LogPrintf("No wallet compiled in!\n");
 #endif // !ENABLE_WALLET
     // ********************************************************* Step 9: import blocks
 
@@ -2424,7 +2431,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
     {    
         threadGroup.create_thread(boost::bind(&ThreadImport, vImportFiles));
         if (chainActive.Tip() == NULL) {
-            LogPrintf("Waiting for genesis block to be imported...\n");
+            if(fDebug>0)LogPrintf("Waiting for genesis block to be imported...\n");
             while (!fRequestShutdown && chainActive.Tip() == NULL)
                 MilliSleep(10);
         }
@@ -2440,20 +2447,20 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
 
     //RandAddSeedPerfmon();
 
-    LogPrintf("mapBlockIndex.size() = %u\n",   mapBlockIndex.size());
-    LogPrintf("nBestHeight = %d\n",                   chainActive.Height());
+    if(fDebug>0)LogPrintf("mapBlockIndex.size() = %u\n",   mapBlockIndex.size());
+    if(fDebug>0)LogPrintf("nBestHeight = %d\n",                   chainActive.Height());
 #ifdef ENABLE_WALLET
-    LogPrintf("setKeyPool.size() = %u\n",      pwalletMain ? pwalletMain->setKeyPool.size() : 0);
+    if(fDebug>0)LogPrintf("setKeyPool.size() = %u\n",      pwalletMain ? pwalletMain->setKeyPool.size() : 0);
     if(mc_gState->m_WalletMode & MC_WMD_TXS)
     {
-        LogPrintf("oldWallet.size() = %u\n",       pwalletMain ? pwalletMain->mapWallet.size() : 0);        
-        LogPrintf("mapWallet.size() = %u\n",       pwalletTxsMain->m_Database->m_DBStat.m_Count);        
+        if(fDebug>0)LogPrintf("oldWallet.size() = %u\n",       pwalletMain ? pwalletMain->mapWallet.size() : 0);        
+        if(fDebug>0)LogPrintf("mapWallet.size() = %u\n",       pwalletTxsMain->m_Database->m_DBStat.m_Count);        
     }
     else
     {
-        LogPrintf("mapWallet.size() = %u\n",       pwalletMain ? pwalletMain->mapWallet.size() : 0);
+        if(fDebug>0)LogPrintf("mapWallet.size() = %u\n",       pwalletMain ? pwalletMain->mapWallet.size() : 0);
     }
-    LogPrintf("mapAddressBook.size() = %u\n",  pwalletMain ? pwalletMain->mapAddressBook.size() : 0);
+    if(fDebug>0)LogPrintf("mapAddressBook.size() = %u\n",  pwalletMain ? pwalletMain->mapAddressBook.size() : 0);
 #endif
 
     if(!GetBoolArg("-offline",false))
@@ -2496,7 +2503,7 @@ bool AppInit2(boost::thread_group& threadGroup,int OutputPipe)
     }
     mc_InitRPCHelpMap();
 
-    LogPrintf("Node started\n");
+    if(fDebug>0)LogPrintf("Node started\n");
 
     return !fRequestShutdown;
 }

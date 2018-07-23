@@ -55,7 +55,7 @@ void CAssetGroupTree::Dump()
     int i,j;
     
     if(debug_print)printf("Asset Grouping. Group Size: %d. Group Count: %d\n",nAssetsPerGroup,lpAssetGroups->GetCount()-1);
-    if(fDebug)LogPrint("hdac","hdac: Asset Grouping. Group Size: %d. Group Count: %d\n",nAssetsPerGroup,lpAssetGroups->GetCount()-1);
+    if(fDebug>1)LogPrint("hdac","hdac: Asset Grouping. Group Size: %d. Group Count: %d\n",nAssetsPerGroup,lpAssetGroups->GetCount()-1);
     for(i=1;i<lpAssetGroups->GetCount();i++)                                    
     {    
         thisGroup=(CAssetGroup*)lpAssetGroups->GetRow(i);
@@ -118,7 +118,7 @@ int CAssetGroupTree::Resize(int newAssets)
     }
 
     if(debug_print)printf("Asset grouping resize %d -> %d\n",nAssetsPerGroup,n);
-    if(fDebug)LogPrint("hdac","Asset grouping resize %d -> %d\n",nAssetsPerGroup,n);
+    if(fDebug>1)LogPrint("hdac","Asset grouping resize %d -> %d\n",nAssetsPerGroup,n);
     
     mc_Buffer *new_asset_groups_buffer;
     
@@ -309,10 +309,10 @@ int CAssetGroupTree::GetGroup(mc_Buffer* assets, int addIfNeeded)
     for(i=0;i<assets->GetCount();i++)
     {
         assetRef=assets->GetRow(i);
-//        if(mc_GetLE(assetRef+MC_AST_ASSET_REF_TYPE_OFFSET,MC_AST_ASSET_REF_TYPE_SIZE) != MC_AST_ASSET_REF_TYPE_SPECIAL)// Special rows are ignored - there is no real assets with asset-ref block=0
+        //if(mc_GetLE(assetRef+MC_AST_ASSET_REF_TYPE_OFFSET,MC_AST_ASSET_REF_TYPE_SIZE) != MC_AST_ASSET_REF_TYPE_SPECIAL)// Special rows are ignored - there is no real assets with asset-ref block=0
         if( (mc_GetABRefType(assetRef) != MC_AST_ASSET_REF_TYPE_SPECIAL) &&
             (mc_GetABRefType(assetRef) != MC_AST_ASSET_REF_TYPE_GENESIS) )                    
-//        if(mc_GetLE(assetRef,4) > 0)                             
+        //if(mc_GetLE(assetRef,4) > 0)                             
         {
             g=GetGroup(assetRef,0);
             if(g>0)
@@ -582,7 +582,7 @@ void AvalableCoinsForAddress(CWallet *lpWallet,vector<COutput>& vCoins, const CC
     
     lpWallet->AvailableCoins(vCoins, true, coinControl,true,true,addr,NULL,flags);
     this_time=mc_TimeNowAsDouble();    
-    if(fDebug)LogPrint("mcperf","mcperf: AvailableCoins: Time: %8.6f \n", this_time-last_time);
+    if(fDebug>1)LogPrint("mcperf","mcperf: AvailableCoins: Time: %8.6f \n", this_time-last_time);
     last_time=this_time;
     
     if(addresses == NULL)
@@ -628,7 +628,7 @@ void AvalableCoinsForAddress(CWallet *lpWallet,vector<COutput>& vCoins, const CC
     
     vCoins=vFilteredCoins;
     this_time=mc_TimeNowAsDouble();    
-    if(fDebug)LogPrint("mcperf","mcperf: Address Filtering: Time: %8.6f \n", this_time-last_time);
+    if(fDebug>1)LogPrint("mcperf","mcperf: Address Filtering: Time: %8.6f \n", this_time-last_time);
     last_time=this_time;
 }
 
@@ -1069,7 +1069,7 @@ bool CalculateChangeAmounts(CWallet *lpWallet,                                  
                     for(int i=0;i<tmp_amounts->GetCount();i++)
                     {
                         if(debug_print)DebugPrintAssetTxOut(hash,out.i,tmp_amounts->GetRow(i),mc_GetABQuantity(tmp_amounts->GetRow(i)));
-                        if(fDebug)LogAssetTxOut("Input : ",hash,out_i,tmp_amounts->GetRow(i),mc_GetABQuantity(tmp_amounts->GetRow(i)));
+                        if(fDebug>1)LogAssetTxOut("Input : ",hash,out_i,tmp_amounts->GetRow(i),mc_GetABQuantity(tmp_amounts->GetRow(i)));
                     }
                     for(int i=0;i<tmp_amounts->GetCount();i++)                  // Add all assets onto change buffer, not only those from out_amounts
                     {
@@ -1151,7 +1151,7 @@ bool CalculateChangeAmounts(CWallet *lpWallet,                                  
             }
         }
     }    
-        
+
     if(debug_print)printf("debg: Change:\n");
     for(int i=0;i<change_amounts->GetCount();i++)
     {
@@ -1323,7 +1323,7 @@ bool SelectAssetCoins(CWallet *lpWallet,                                        
     
     nTargetValue=nTotalOutValue-nTotalSelectedValue;
     if(debug_print)printf("debg: Row: %d. In: %ld; Out: %ld; Selected: %ld; Target: %ld \n",in_asset_row,nTotalInValue,nTotalOutValue,nTotalSelectedValue,nTargetValue);
-    
+    if(fDebug>1)LogPrintf("%s Row: %d. UtxoTotalIn: %ld; Out: %ld; Selected: %ld; Target: %ld \n",__func__,in_asset_row,nTotalInValue,nTotalOutValue,nTotalSelectedValue,nTargetValue);    
     if(nTotalOutValue>nTotalInValue)                                            // Insufficient funds    
     {                        
         return false;
@@ -1499,7 +1499,7 @@ CAmount BuildAssetTransaction(CWallet *lpWallet,                                
     missing_amount=nFeeRet+(change_count+extra_change_count)*default_change_output-nTotalInValue;
     if(missing_amount > 0)                                                  // Inputs don't carry enough native currency, go out and select additional coins 
     {
-        if(fDebug)LogPrint("mcatxo","mcatxo: Missing amount: %ld. Fee: %ld, Change: %ld, Inputs: %ld\n",missing_amount,nFeeRet,change_count*min_output,nTotalInValue);
+        if(fDebug>1)LogPrint("mcatxo","mcatxo: Missing amount: %ld. Fee: %ld, Change: %ld, Inputs: %ld\n",missing_amount,nFeeRet,change_count*min_output,nTotalInValue);
         if(debug_print)printf("Missing amount: %ld. Fee: %ld, Change: %ld, Inputs: %ld\n",missing_amount,nFeeRet,change_count*min_output,nTotalInValue);
         return missing_amount;
     }
@@ -1549,7 +1549,7 @@ CAmount BuildAssetTransaction(CWallet *lpWallet,                                
                         for(int i=0;i<tmp_amounts->GetCount();i++)
                         {
                             if(debug_print)DebugPrintAssetTxOut(0,0,tmp_amounts->GetRow(i),mc_GetABQuantity(tmp_amounts->GetRow(i)));
-                            if(fDebug)LogAssetTxOut("Change: ",0,0,tmp_amounts->GetRow(i),mc_GetABQuantity(tmp_amounts->GetRow(i)));
+                            if(fDebug>1)LogAssetTxOut("Change: ",0,0,tmp_amounts->GetRow(i),mc_GetABQuantity(tmp_amounts->GetRow(i)));
                         }
                         lpScript->Clear();
                         lpScript->SetAssetQuantities(tmp_amounts,MC_SCR_ASSET_SCRIPT_TYPE_TRANSFER);
@@ -1608,7 +1608,7 @@ CAmount BuildAssetTransaction(CWallet *lpWallet,                                
             CAmount nAmount=nTotalInValue-nTotalChangeValue-nFeeRet;
             CTxOut txout(nAmount, scriptChange);
             if(debug_print)printf("debg: Native change output: %ld\n",nAmount);
-            if(fDebug)LogAssetTxOut("Change: ",0,0,NULL,nAmount);
+            if(fDebug>1)LogAssetTxOut("Change: ",0,0,NULL,nAmount);
             txNew.vout.push_back(txout);            
         }
 
@@ -1672,7 +1672,7 @@ CAmount BuildAssetTransaction(CWallet *lpWallet,                                
 
                                 CTxOut txout(0, scriptCachedScript);
                                 if(debug_print)printf("debg: Cached Script for input %d\n",(int)txNew.vin.size()-1);
-                                if(fDebug)LogAssetTxOut("Cached Script: ",0,0,NULL,0);
+                                if(fDebug>1)LogAssetTxOut("Cached Script: ",0,0,NULL,0);
                                 txNew.vout.push_back(txout);            
                                 fScriptCached=true;
                             }                            
@@ -1706,7 +1706,7 @@ CAmount BuildAssetTransaction(CWallet *lpWallet,                                
                         if (!SignSignature(*lpWallet, txout.scriptPubKey, txNew, nIn++))
                         {
                             CTransaction printableTx=CTransaction(txNew);
-                            if(fDebug)LogPrint("hdac","Cannot sign transaction input %d: (%s,%d), scriptPubKey %s \n",
+                            if(fDebug>1)LogPrint("hdac","Cannot sign transaction input %d: (%s,%d), scriptPubKey %s \n",
                                     nIn-1,txNew.vin[nIn-1].prevout.hash.ToString().c_str(),txNew.vin[nIn-1].prevout.n,txout.scriptPubKey.ToString().c_str());
 
                             strFailReason = _("Signing transaction failed");
@@ -1930,11 +1930,11 @@ bool CreateAssetGroupingTransaction(CWallet *lpWallet, const vector<pair<CScript
     }
 
     if(debug_print)printf("debg: Outputs: (required %d)\n",required);
-    if(fDebug)LogPrint("mcatxo","mcatxo: ====== New transaction, required %d\n",required);
+    if(fDebug>1)LogPrint("mcatxo","mcatxo: ====== New transaction, required %d\n",required);
     for(int i=0;i<out_amounts->GetCount();i++)
     {
         if(debug_print)DebugPrintAssetTxOut(0,0,out_amounts->GetRow(i),mc_GetABQuantity(out_amounts->GetRow(i)));
-        if(fDebug)LogAssetTxOut("Output: ",0,0,out_amounts->GetRow(i),mc_GetABQuantity(out_amounts->GetRow(i)));
+        if(fDebug>1)LogAssetTxOut("Output: ",0,0,out_amounts->GetRow(i),mc_GetABQuantity(out_amounts->GetRow(i)));
     }
 
     this_time=mc_TimeNowAsDouble();
@@ -1946,7 +1946,7 @@ bool CreateAssetGroupingTransaction(CWallet *lpWallet, const vector<pair<CScript
 
     this_time=mc_TimeNowAsDouble();
     if(csperf_debug_print)if(vecSend.size())printf("Available               : %8.6f\n",this_time-last_time);
-    if(fDebug)LogPrint("mcperf","Coin Selection, available coins time: %8.6f\n",this_time-last_time);
+    if(fDebug>1)LogPrint("mcperf","Coin Selection, available coins time: %8.6f\n",this_time-last_time);
     last_time=this_time;
     
     int in_special_row[10];
@@ -2097,7 +2097,7 @@ bool CreateAssetGroupingTransaction(CWallet *lpWallet, const vector<pair<CScript
                 
                 this_time=mc_TimeNowAsDouble();
                 if(csperf_debug_print)if(vecSend.size())printf("Inputs                  : %8.6f\n",this_time-last_time);
-                if(fDebug)LogPrint("mcperf","mcperf: CS: Input Parsing: Time: %8.6f \n", this_time-last_time);
+                if(fDebug>1)LogPrint("mcperf","mcperf: CS: Input Parsing: Time: %8.6f \n", this_time-last_time);
                 last_time=this_time;
     
                 for(int asset=0;asset<out_amounts->GetCount();asset++)
@@ -2198,7 +2198,7 @@ bool CreateAssetGroupingTransaction(CWallet *lpWallet, const vector<pair<CScript
     
                 this_time=mc_TimeNowAsDouble();
                 if(csperf_debug_print)if(vecSend.size())printf("Select                  : %8.6f\n",this_time-last_time);
-                if(fDebug)LogPrint("mcperf","mcperf: CS: Coin Selection: Time: %8.6f \n", this_time-last_time);
+                if(fDebug>1)LogPrint("mcperf","mcperf: CS: Coin Selection: Time: %8.6f \n", this_time-last_time);
                 last_time=this_time;                
             }
             else
@@ -2241,7 +2241,7 @@ bool CreateAssetGroupingTransaction(CWallet *lpWallet, const vector<pair<CScript
             
             this_time=mc_TimeNowAsDouble();
             if(csperf_debug_print)if(vecSend.size())printf("Build                   : %8.6f\n",this_time-last_time);
-            if(fDebug)LogPrint("mcperf","mcperf: Transaction Building: Time: %8.6f \n", this_time-last_time);
+            if(fDebug>1)LogPrint("mcperf","mcperf: Transaction Building: Time: %8.6f \n", this_time-last_time);
             last_time=this_time;
             
             
@@ -2312,7 +2312,1013 @@ exitlbl:
     
     if(strFailReason.size())
     {
-        if(fDebug)LogPrint("mcatxo","mcatxo: ====== Error: %s\n",strFailReason.c_str());
+        if(fDebug>1)LogPrint("mcatxo","mcatxo: ====== Error: %s\n",strFailReason.c_str());
+        if(!skip_error_message)
+        {
+            if(fDebug>0)LogPrintf("hdac: Coin selection: %s\n",strFailReason.c_str());
+        }
+        return false;
+    }
+    
+    this_time=mc_TimeNowAsDouble();
+    if(csperf_debug_print)if(vecSend.size())printf("CS Exit                 : %8.6f\n",this_time-last_time);
+    last_time=this_time;
+    
+    if(fDebug>1)LogPrint("mcatxo","mcatxo: ====== Created: %s\n",wtxNew.GetHash().ToString().c_str());
+    return true;
+}
+
+CAmount BuildAssetTransactionFee(CWallet *lpWallet,                                // IN  Wallet object
+                              CWalletTx& wtxNew,                                // OUT Resulting transaction
+                              CTxDestination& change_address,                   // IN  Address for change
+                              CAmount& nFeeRet,                                 // IN/OUT Required fee
+                              const vector<pair<CScript, CAmount> >& vecSend,   // IN  Output amount/script array
+                              vector<COutput>& vCoins,                          // IN  Unspent UTXOs
+                              mc_Buffer *in_amounts,                            // IN  Input amount matrix
+                              mc_Buffer *change_amounts,                        // IN  Change amount matrix
+                              int required,                                     // IN  Required special permissions
+                              CAmount min_output,                               // IN  minimum native currency value (to be set in change outputs))
+                              mc_Buffer *tmp_amounts,                           // TMP temporary asset-quantity buffer
+                              mc_Script *lpScript,                              // TMP temporary script object
+                              int *in_special_row,                              // IN  Coordinates of special rows
+                              set<CTxDestination>* usedAddresses,               // In  List of addresses used in selection.
+                              uint32_t flags,                                   // In  Coin selection flags
+                              std::string& strFailReason,bool deductfee)                       // OUT error message
+{
+    set <int> active_groups;
+    
+    int group_id;
+    int change_count;
+    int extra_change_count;
+    int deduct_fee_which=0;
+    CAmount send_amount;
+    CAmount missing_amount;
+    int64_t quantity;
+    
+    CAmount nTotalInValue=0;
+    CAmount nTotalChangeValue=0;
+    CAmount default_change_output;
+    CAmount change_amount;
+        
+    for(int i=0;i<change_amounts->GetCount();i++)                               // Finding relevant asset groups and calculating native currency total 
+    {
+        quantity=mc_GetABQuantity(change_amounts->GetRow(i));
+        if(quantity<0)                                                          // We didn't find inputs properly
+        {
+            strFailReason=_("Internal error: negative change amount");
+            return -1;                                
+        }
+        if(quantity>0)
+        {
+            group_id=mc_GetLE(change_amounts->GetRow(i)+MC_AST_ASSET_FULLREF_BUF_SIZE,sizeof(int));
+            if(mc_GetABRefType(change_amounts->GetRow(i)) != MC_AST_ASSET_REF_TYPE_SPECIAL)
+            //if(mc_GetLE(change_amounts->GetRow(i),4) != 0)
+            {
+                if(debug_print)printf("debg: Found asset belonging to group %d\n",group_id);
+            }
+            if(group_id)                                                        // We don't care about native and special assets
+            {
+                std::set<int>::const_iterator it = active_groups.find(group_id);
+                if (it == active_groups.end())
+                {
+                    active_groups.insert(group_id);
+                }
+            }
+            if( (mc_GetABRefType(change_amounts->GetRow(i)) == MC_AST_ASSET_REF_TYPE_SPECIAL) &&
+                 (mc_GetLE(change_amounts->GetRow(i)+4,4) == MC_PTP_SEND) )
+            {
+                nTotalInValue=quantity;
+            }
+        }
+    }
+    
+    change_count=0;
+    if(nTotalInValue > nFeeRet)                                                 // Pure native currency change is required
+    {
+        change_count=1;
+    }
+    change_count+=active_groups.size();
+    
+    const unsigned char* change_aptr=GetAddressIDPtr(change_address);           
+    
+    if(change_aptr == NULL)
+    {
+        if(change_count>0)                                                      // We have to send change, but we couldn't find change address with receive permission 
+        {
+            strFailReason = _("Change address not found");
+            return -2;
+        }
+    }
+    else
+    {
+        if(change_count == 0)
+        {
+            change_count=1;
+        }
+    }
+    
+    extra_change_count=0;
+    BOOST_FOREACH(const CTxDestination& address, *usedAddresses)             // Sending empty change to all addresses used in inputs, except change_address
+    {        
+        const unsigned char* aptr=GetAddressIDPtr(address);
+        if(aptr)
+        {
+            if((change_aptr == NULL) ||  memcmp(change_aptr,aptr,20))
+            {                    
+                if(mc_gState->m_Permissions->CanReceive(NULL,aptr))
+                {
+                    extra_change_count++;
+                }
+                else
+                {
+                    if((mc_gState->m_Features->AnyoneCanReceiveEmpty() != 0) && (min_output == 0))                          
+                    {
+                        extra_change_count++;                            
+                    }                        
+                }
+            }                
+        }
+    }        
+    
+    if(min_output >= 0)
+    {
+        default_change_output=min_output;
+    }
+    else
+    {
+        default_change_output=182;   // 34 + 148 (see CTxOut.IsDust for explanation)
+    }
+    
+    missing_amount=nFeeRet+(change_count+extra_change_count)*default_change_output-nTotalInValue;
+    if(missing_amount > 0)                                                  // Inputs don't carry enough native currency, go out and select additional coins 
+    {
+        if(debug_print)printf("Missing amount: %ld. Fee: %ld, Change: %ld, Inputs: %ld\n",missing_amount,nFeeRet,change_count*min_output,nTotalInValue);
+        return missing_amount;
+    }
+
+    missing_amount = 0;
+    
+    while(missing_amount == 0)
+    {
+        CMutableTransaction txNew;
+        txNew.vin.clear();
+        txNew.vout.clear();
+        nTotalChangeValue=0;
+        int nDeductFeeAmount = 0;
+        nDeductFeeAmount = vecSend.size();
+        bool first = true;
+
+        BOOST_FOREACH (const PAIRTYPE(CScript, CAmount)& s, vecSend)            // Original outputs
+        {
+          if(deductfee && deduct_fee_which != 0)
+          {
+            send_amount = s.second;
+            send_amount -= (nFeeRet/nDeductFeeAmount);
+            if(first && (nFeeRet%nDeductFeeAmount != 0))
+            {
+              first = false;
+              send_amount -= (nFeeRet%nDeductFeeAmount);
+            }
+            CTxOut txout(send_amount, s.first);
+            if(txout.nValue < 0)
+            {
+              strFailReason = _("The transaction amount is too small to send when fee deducted");
+              return -1;            
+            }
+            txNew.vout.push_back(txout);
+          }
+          else
+          {
+            CTxOut txout(s.second, s.first);
+            txNew.vout.push_back(txout);
+          }
+          //if(fDebug>1)LogPrint("hdac","==> Vout for SEND %d txnew %s \n",txNew.vout.size(),txNew.vout[txNew.vout.size()-1].ToString());
+        }
+
+        int assets_per_opdrop=(MAX_SCRIPT_ELEMENT_SIZE-4)/(mc_gState->m_NetworkParams->m_AssetRefSize+MC_AST_ASSET_QUANTITY_SIZE);
+ 
+        size_t elem_size;
+        const unsigned char *elem;
+
+        BOOST_FOREACH (const int& g, active_groups)                             // Asset change outputs
+        {
+            tmp_amounts->Clear();
+            CScript scriptChange=GetScriptForDestination(change_address);
+            for(int i=0;i<change_amounts->GetCount();i++)
+            {
+                group_id=mc_GetLE(change_amounts->GetRow(i)+MC_AST_ASSET_FULLREF_BUF_SIZE,sizeof(int));
+                if(group_id == g)
+                {
+                    quantity=mc_GetABQuantity(change_amounts->GetRow(i));
+                    if(quantity>0)
+                    {
+                        tmp_amounts->Add(change_amounts->GetRow(i));
+                    }
+                }
+                                                                                // flush asset buffer into script]
+                if( (tmp_amounts->GetCount()>=assets_per_opdrop) || (i == change_amounts->GetCount()-1) )
+                {
+                    if(tmp_amounts->GetCount())
+                    {
+                        if(debug_print)printf("debg: Change output, group %d:\n",g);
+                        for(int i=0;i<tmp_amounts->GetCount();i++)
+                        {
+                            if(debug_print)DebugPrintAssetTxOut(0,0,tmp_amounts->GetRow(i),mc_GetABQuantity(tmp_amounts->GetRow(i)));
+                            if(fDebug>1)LogAssetTxOut("Change1: ",0,0,tmp_amounts->GetRow(i),mc_GetABQuantity(tmp_amounts->GetRow(i)));
+                        }
+                        lpScript->Clear();
+                        lpScript->SetAssetQuantities(tmp_amounts,MC_SCR_ASSET_SCRIPT_TYPE_TRANSFER);
+                        for(int element=0;element < lpScript->GetNumElements();element++)
+                        {
+                            elem = lpScript->GetData(element,&elem_size);
+                            if(elem)
+                            {
+                                scriptChange << vector<unsigned char>(elem, elem + elem_size) << OP_DROP;
+                            }
+                            else
+                            {
+                                strFailReason = _("Internal error: cannot create asset transfer script");
+                                return -1;
+                            }
+                        }
+                        tmp_amounts->Clear();
+                    }
+                }
+            }
+            change_amount=min_output;
+            if(change_amount<0)
+            {
+                CTxOut txout_for_size(0, scriptChange);
+                change_amount=3*(::minRelayTxFee.GetFee(txout_for_size.GetSerializeSize(SER_DISK,0)+148u));                
+            }
+            CTxOut txout(change_amount, scriptChange);
+            nTotalChangeValue += change_amount;
+            txNew.vout.push_back(txout);            
+        }
+        
+        BOOST_FOREACH(const CTxDestination& address, *usedAddresses)             // Sending empty change to all addresses used in inputs, except change_address
+        {        
+            const unsigned char* aptr=GetAddressIDPtr(address);
+            if(aptr)
+            {
+                if((change_aptr == NULL) ||  memcmp(change_aptr,aptr,20))
+                {
+                    if( (mc_gState->m_Permissions->CanReceive(NULL,aptr) != 0) || 
+                        ((mc_gState->m_Features->AnyoneCanReceiveEmpty() != 0) && (default_change_output == 0)) )
+                    {
+                        CScript scriptChange=GetScriptForDestination(address);
+                        CAmount nAmount=default_change_output;
+                        CTxOut txout(nAmount, scriptChange);
+                        nTotalChangeValue += nAmount;
+                        if(debug_print)printf("debg: Extra change: %ld\n",nAmount);
+                        txNew.vout.push_back(txout);                            
+                    }
+                }
+            }
+        }        
+
+        if(change_count > (int)active_groups.size())                            // Native currency change
+        {
+            CScript scriptChange=GetScriptForDestination(change_address);
+            CAmount nAmount= (deduct_fee_which != 0) ? nTotalInValue-nTotalChangeValue : nTotalInValue-nTotalChangeValue-nFeeRet;
+            if(deductfee && (deduct_fee_which == 1) && (nAmount == 0))
+            {
+              if(fDebug>1)LogPrint("hdac","No make 0 value Vout for CHANGE %d \n",nAmount);
+            }
+            //else if(deductfee && (deduct_fee_which==2))
+            //{
+            //}
+            else
+            {
+              CTxOut txout(nAmount, scriptChange);
+              if(debug_print)printf("debg: Native change output: %ld\n",nAmount);
+              if(fDebug>1)LogAssetTxOut("Change2: ",0,0,NULL,nAmount);
+              txNew.vout.push_back(txout);            
+              //if(fDebug>1)LogPrint("hdac","==> Vout for CHANGE %d txnew %s \n",txNew.vout.size(),txNew.vout[txNew.vout.size()-1].ToString());
+            }
+        }
+
+        double dPriority = 0;
+        bool fScriptCached=false;
+        
+        int coin_id=0;
+        BOOST_FOREACH(const COutput& out, vCoins)                               // Adding inputs
+        {            
+            if(mc_GetABCoinQuantity(in_amounts->GetRow(in_special_row[1]),coin_id))
+            {
+                if(mc_GetABCoinQuantity(in_amounts->GetRow(in_special_row[0]),coin_id))
+                {
+                    CAmount nCredit;
+                    int age;
+                    if(out.tx)
+                    {
+                        age = out.tx->GetDepthInMainChain();
+                        nCredit = out.tx->vout[out.i].nValue;
+                    }
+                    else
+                    {
+                        age = out.coin.GetDepthInMainChain();
+                        nCredit=out.coin.m_TXOut.nValue;
+                    }
+                    if (age != 0)
+                        age += 1;
+                    dPriority += (double)nCredit * age;
+                    CTxOut txout;
+                    uint256 hash=out.GetHashAndTxOut(txout);
+                    txNew.vin.push_back(CTxIn(hash,out.i));
+                    //if(fDebug>1)LogPrint("hdac","==> Vin for %d txnew %s \n",txNew.vin.size(),txNew.vin[txNew.vin.size()-1].ToString());
+                    if(required & MC_PTP_CACHED_SCRIPT_REQUIRED)
+                    {
+                        if(!fScriptCached)
+                        {
+                            if( (mc_GetABCoinQuantity(in_amounts->GetRow(in_special_row[6]),coin_id) != 0) || 
+                                ( ( required & (MC_PTP_ADMIN | MC_PTP_MINE) ) == 0 ) )
+                            {
+                                int cs_offset;
+                                CScript script3;        
+                                size_t elem_size;
+                                const unsigned char *elem;
+                                
+                                if(out.tx)
+                                {
+                                    script3 = out.tx->vout[out.i].scriptPubKey;
+                                }
+                                else
+                                {
+                                    script3=out.coin.m_TXOut.scriptPubKey;
+                                }
+                                CScript::const_iterator pc3 = script3.begin();
+                                
+                                lpScript->Clear();
+                                lpScript->SetCachedScript(0,&cs_offset,-1,NULL,-1);       
+                                lpScript->SetCachedScript(cs_offset,&cs_offset,(int)txNew.vin.size()-1,(unsigned char*)&pc3[0],script3.size());
+
+                                CScript scriptCachedScript=CScript();
+                                elem = lpScript->GetData(0,&elem_size);                                
+                                scriptCachedScript << vector<unsigned char>(elem, elem + elem_size) << OP_DROP << OP_RETURN;           
+
+                                CTxOut txout(0, scriptCachedScript);
+                                if(debug_print)printf("debg: Cached Script for input %d\n",(int)txNew.vin.size()-1);
+                                if(fDebug>1)LogAssetTxOut("Cached Script: ",0,0,NULL,0);
+                                txNew.vout.push_back(txout);            
+                                fScriptCached=true;
+                            }                            
+                        }                        
+                    }
+                }
+            }
+            coin_id++;
+        }
+
+        if(txNew.vin.size() == 0)
+        {
+            strFailReason = _("Internal error: no inputs");
+            return -2;            
+        }
+        
+        int nIn=0;
+        unsigned int nSignatureBytes=0;
+        coin_id=0;
+        BOOST_FOREACH(const COutput& out, vCoins)                               // Signing
+        {            
+            if(mc_GetABCoinQuantity(in_amounts->GetRow(in_special_row[1]),coin_id))
+            {
+                if(mc_GetABCoinQuantity(in_amounts->GetRow(in_special_row[0]),coin_id))
+                {
+                    CTxOut txout;
+                    out.GetHashAndTxOut(txout);
+
+                    if(flags & MC_CSF_SIGN)
+                    {
+                        if (!SignSignature(*lpWallet, txout.scriptPubKey, txNew, nIn++))
+                        {
+                            CTransaction printableTx=CTransaction(txNew);
+                            if(fDebug>1)LogPrint("hdac","Cannot sign transaction input %d: (%s,%d), scriptPubKey %s \n",
+                                    nIn-1,txNew.vin[nIn-1].prevout.hash.ToString().c_str(),txNew.vin[nIn-1].prevout.n,txout.scriptPubKey.ToString().c_str());
+
+                            strFailReason = _("Signing transaction failed");
+                            return -2;
+                        }
+                    }
+                    else
+                    {
+                        if(txout.scriptPubKey.IsPayToScriptHash())              // We don't know what is the script generally speaking, using 2-of-3
+                        {
+                            nSignatureBytes+=256;                               // 73*2+33*3+...                
+                        }
+                        else
+                        {
+                            nSignatureBytes+=112;
+                        }
+                    }                    
+                }
+            }
+            coin_id++;
+        }
+        
+        wtxNew.fTimeReceivedIsTxTime = true;
+        wtxNew.fFromMe=true;
+        wtxNew.BindWallet(lpWallet);
+        *static_cast<CTransaction*>(&wtxNew) = CTransaction(txNew);
+
+        // Limit size
+        unsigned int nBytes = nSignatureBytes + ::GetSerializeSize(*(CTransaction*)&wtxNew, SER_NETWORK, PROTOCOL_VERSION);
+        if (nBytes >= MAX_STANDARD_TX_SIZE)
+        {
+            strFailReason = _("Transaction too large");
+            return -2;
+        }
+        dPriority = wtxNew.ComputePriority(dPriority, nBytes);
+
+        // Can we complete this as a free transaction?
+        if (fSendFreeTransactions && nBytes <= MAX_FREE_TRANSACTION_CREATE_SIZE)
+        {
+            // Not enough fee: enough priority?
+            double dPriorityNeeded = mempool.estimatePriority(nTxConfirmTarget);
+            // Not enough mempool history to estimate: use hard-coded AllowFree.
+            if (dPriorityNeeded <= 0 && AllowFree(dPriority))
+                break;
+
+            // Small enough, and priority high enough, to send for free
+            if (dPriorityNeeded > 0 && dPriority >= dPriorityNeeded)
+                break;
+        }
+
+        CAmount nFeeNeeded = lpWallet->GetMinimumFee(nBytes, nTxConfirmTarget, mempool);
+
+        // If we made it here and we aren't even able to meet the relay fee on the next pass, give up
+        // because we must be at the maximum allowed fee.
+        //if (nFeeNeeded < ::minRelayTxFee.GetFee(nBytes))
+        if (nFeeNeeded < ::minRelayTxFee.GetFeePerK())	// HDAC_sk_20180126
+        {
+            strFailReason = _("Transaction too large for fee policy");
+            return -2;
+        }
+
+        if (nFeeRet >= nFeeNeeded)                                              // Done        
+        {
+            if(debug_print)printf("Transaction created. Fee: %ld, Change: %ld, Inputs: %ld\n",nFeeRet,nTotalChangeValue,nTotalInValue);
+            if(deduct_fee_which != 0) deduct_fee_which = 0;
+            return 0;
+        }
+        
+        if(nFeeNeeded > nFeeRet)
+        {
+            nFeeRet = nFeeNeeded;
+        }
+        
+        missing_amount=nFeeRet+nTotalChangeValue-nTotalInValue;
+
+        if(missing_amount > 0)                                                  // Inputs don't carry enough native currency, go out and select additional coins 
+        {
+            if(debug_print)printf("Missing amount: %ld. Fee: %ld, Change: %ld, Inputs: %ld\n",missing_amount,nFeeRet,nTotalChangeValue,nTotalInValue);
+            if(deductfee && nTotalChangeValue==0 && nTotalInValue==0)
+            {
+              deduct_fee_which = 1;
+            }
+            else if(deductfee)
+            {
+              deduct_fee_which = 2;
+            }
+            else
+            {
+              return missing_amount;
+            }
+        }
+
+        if(missing_amount <= 0)
+        {
+          deduct_fee_which = 2;
+        }
+        
+        if(debug_print)printf("Increased fee: Fee: %ld, Change: %ld, Inputs: %ld\n",nFeeRet,nTotalChangeValue,nTotalInValue);
+
+        missing_amount=0;                                                       // We have enough native currency, we can try again by increasing the fee  
+    }    
+    
+    if(debug_print)printf("Transaction created (free). Fee: %ld, Change: %ld, Inputs: %ld\n",nFeeRet,nTotalChangeValue,nTotalInValue);
+    
+    return 0;
+}
+
+bool CreateAssetGroupingTransactionFee(CWallet *lpWallet, const vector<pair<CScript, CAmount> >& vecSend,
+                                CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet, std::string& strFailReason, const CCoinControl* coinControl,
+                                const set<CTxDestination>* addresses,int min_conf,int min_inputs,int max_inputs,const vector<COutPoint>* lpCoinsToUse,uint32_t flags,int *eErrorCode,bool deductfee)
+{   
+    double start_time=mc_TimeNowAsDouble();
+    double last_time,this_time;
+    last_time=start_time;
+    
+    this_time=mc_TimeNowAsDouble();
+    if(csperf_debug_print)if(vecSend.size())printf("Start                                   \n");
+    last_time=this_time;
+    
+    if(eErrorCode)*eErrorCode=RPC_INVALID_PARAMETER;
+    CAmount nValue = 0;
+    BOOST_FOREACH (const PAIRTYPE(CScript, CAmount)& s, vecSend)
+    {
+        if (nValue < 0)                                                         // allows protocol zero-value outputs
+        {
+            strFailReason = _("Transaction amounts must be non-negative");
+            return false;
+        }
+        nValue += s.second;
+    }
+    if (nValue < 0)
+    {
+        strFailReason = _("Transaction amounts must be non-negative");
+        return false;
+    }
+    
+    nFeeRet=0;
+    
+    CWallet::minTxFee = CFeeRate(MIN_RELAY_TX_FEE);    
+    minRelayTxFee = CFeeRate(MIN_RELAY_TX_FEE);    
+    
+    mc_Buffer *out_amounts;                                         
+    
+    out_amounts=new mc_Buffer;
+    mc_InitABufferMap(out_amounts);
+        
+    mc_Buffer *change_amounts;
+    
+    change_amounts=new mc_Buffer;
+    change_amounts->Initialize(MC_AST_ASSET_QUANTITY_OFFSET,MC_AST_ASSET_FULLREF_BUF_SIZE+sizeof(int),MC_BUF_MODE_MAP);
+    
+    mc_Buffer *tmp_amounts;
+    
+    tmp_amounts=new mc_Buffer;
+    mc_InitABufferMap(tmp_amounts);
+    
+    mc_Script *lpScript;
+    lpScript=new mc_Script;    
+
+    mc_Buffer *in_amounts;
+    in_amounts=NULL;
+    
+    mc_Buffer *in_map;
+    in_map=NULL;
+    
+    unsigned char *in_row;
+    int required;
+    int special_required=MC_PTP_ADMIN | MC_PTP_ACTIVATE | MC_PTP_ISSUE | MC_PTP_CREATE | MC_PTP_WRITE;
+    uint256 hash;
+    int32_t type;
+    bool no_send_coins;
+    vector<COutput> vCoins;
+    CTxDestination change_address;
+    CAmount min_output;
+    CAmount missing_amount;
+    CAmount nTotalOutValue;
+    CMutableTransaction txNew;
+    map<uint32_t, uint256> mapSpecialEntity;
+    set<CTxDestination> usedAddresses;
+    bool skip_error_message=false;
+    
+    in_row=NULL;
+    out_amounts->Clear();
+
+    hash=0;
+    
+    required=0;
+    if(vecSend.size())
+    {
+        required=0;
+        if( (addresses == NULL) || (addresses->size() != 1) )
+        {
+            BOOST_FOREACH (const PAIRTYPE(CScript, CAmount)& s, vecSend)            // Filling buffer with output amounts
+            {
+                CTxOut txout(s.second, s.first);
+                int this_required=MC_PTP_ALL;
+                if(!ParseHdacTxOutToBuffer(hash,txout,out_amounts,lpScript,NULL,&this_required,&mapSpecialEntity,strFailReason))
+                {
+                    goto exitlbl;
+                }
+                required |= this_required;
+            }
+        }    
+        else
+        {
+            set<CTxDestination>::const_iterator it = addresses->begin();
+            CTxDestination address_from=*it;        
+            BOOST_FOREACH (const PAIRTYPE(CScript, CAmount)& s, vecSend)            // Filling buffer with output amounts
+            {
+                CTxOut txout(s.second, s.first);
+                int this_required=MC_PTP_SEND | MC_PTP_RECEIVE;
+                if(!ParseHdacTxOutToBuffer(hash,txout,out_amounts,lpScript,NULL,&this_required,&mapSpecialEntity,strFailReason))
+                {
+                    goto exitlbl;
+                }                
+                if(this_required & special_required)
+                {
+                    int this_allowed=CheckRequiredPermissions(address_from,this_required & special_required,&mapSpecialEntity,&strFailReason);
+                    this_allowed &= (this_required & special_required);
+                    if( this_allowed   != (this_required & special_required) )
+                    {                        
+                        goto exitlbl;                        
+                    }
+                    this_required -= (this_required & special_required);
+                    mapSpecialEntity.clear();
+                }
+                required |= this_required;
+            }
+        }
+    }
+    else
+    {
+        if(fDebug>1)LogPrint("mcperf","No vecSend when combineunspent etc.. \n");
+        required=MC_PTP_SEND;
+        CTxOut txout(0, CScript());
+        if(!ParseHdacTxOutToBuffer(hash,txout,out_amounts,lpScript,NULL,&required,strFailReason))
+        {
+            goto exitlbl;
+        }        
+    }
+
+    if(debug_print)printf("debg: Outputs: (required %d)\n",required);
+    if(fDebug>1)LogPrint("mcatxo","mcatxo: ====== New transactionFee, required %d deductfee %d\n",required,deductfee);
+    for(int i=0;i<out_amounts->GetCount();i++)
+    {
+        if(debug_print)DebugPrintAssetTxOut(0,0,out_amounts->GetRow(i),mc_GetABQuantity(out_amounts->GetRow(i)));
+        if(fDebug>1)LogAssetTxOut("Output: ",0,0,out_amounts->GetRow(i),mc_GetABQuantity(out_amounts->GetRow(i)));
+    }
+
+    this_time=mc_TimeNowAsDouble();
+    if(csperf_debug_print)if(vecSend.size())printf("Output                  : %8.6f\n",this_time-last_time);
+    last_time=this_time;
+    
+                                                                                // Getting available coin list   
+    AvalableCoinsForAddress(lpWallet,vCoins,coinControl,addresses,flags);
+
+    this_time=mc_TimeNowAsDouble();
+    if(csperf_debug_print)if(vecSend.size())printf("Available               : %8.6f\n",this_time-last_time);
+    if(fDebug>1)LogPrint("mcperf","Coin Selection, available coins time: %8.6f vCoins.size %d\n",this_time-last_time,vCoins.size());
+    last_time=this_time;
+    
+    int in_special_row[10];
+    int in_size;
+                                                                                // Input coin matrix
+                                                                                // Rows - assets, columns - coins
+    in_size=MC_AST_ASSET_QUANTITY_OFFSET+vCoins.size()*MC_AST_ASSET_QUANTITY_SIZE;
+    in_amounts=new mc_Buffer;
+    in_amounts->Initialize(MC_AST_ASSET_QUANTITY_OFFSET,in_size,MC_BUF_MODE_MAP);
+
+    this_time=mc_TimeNowAsDouble();
+    if(csperf_debug_print)if(vecSend.size())printf("Alloc                   : %8.6f (%d)\n",this_time-last_time,in_size);
+    last_time=this_time;
+                                                                                // Map coin -> index in in_amounts
+                                                                                // We need this as in SelectHdacCoinsMinConf coins will be shuffled
+                                                                                // Key: 32-byte txid, 4-byte output id. Value - index in in_amounts
+    in_map=new mc_Buffer;
+    in_map->Initialize(36,40,MC_BUF_MODE_MAP);
+    
+    in_row=(unsigned char*)mc_New(in_size);
+    
+        
+    for(int i=0;i<10;i++)
+    {
+        in_special_row[i]=-1;
+    }
+                                                                                    // Special row, if coin is already selected (or not used at all) the value is 1
+    in_special_row[0]=in_amounts->GetCount();
+    memset(in_row,-1,in_size);
+    memset(in_row,0,MC_AST_ASSET_QUANTITY_OFFSET);
+    type=0;
+    mc_PutLE(in_row+4,&type,4);
+    mc_SetABRefType(in_row,MC_AST_ASSET_REF_TYPE_SPECIAL);
+    in_amounts->Add(in_row);
+    
+                                                                                // Special row, if coin is taken for selection the value is 1
+    in_special_row[1]=in_amounts->GetCount();
+    memset(in_row,0,in_size);
+    type=0;
+    mc_PutLE(in_row+4,&type,4);
+    mc_SetABRefType(in_row,MC_AST_ASSET_REF_TYPE_SPECIAL);
+    in_amounts->Add(in_row);
+    
+                                                                                // Special row, saved selection
+    in_special_row[2]=in_amounts->GetCount();
+    memset(in_row,0,in_size);
+    type=0;
+    mc_PutLE(in_row+4,&type,4);
+    mc_SetABRefType(in_row,MC_AST_ASSET_REF_TYPE_SPECIAL);
+    in_amounts->Add(in_row);
+    
+                                                                                // Native currency row, coin value if input has send permission, 0 otherwise
+    in_special_row[3]=in_amounts->GetCount();
+    memset(in_row,0,in_size);
+    type=MC_PTP_SEND;
+    mc_PutLE(in_row+4,&type,4);
+    mc_SetABRefType(in_row,MC_AST_ASSET_REF_TYPE_SPECIAL);
+    in_amounts->Add(in_row);
+    
+                                                                                // Pure native currency flag, 1 if n o other assets were found in the coin
+    in_special_row[4]=in_amounts->GetCount();
+    memset(in_row,0,in_size);
+    type=MC_PTP_SEND;
+    mc_SetABRefType(in_row,MC_AST_ASSET_REF_TYPE_SPECIAL);
+    mc_PutLE(in_row+4,&type,4);
+    in_amounts->Add(in_row);
+    
+                                                                                // Issue row, coin value if input has issue permission, 0 otherwise
+    if(required & MC_PTP_ISSUE)
+    {
+        in_special_row[5]=in_amounts->GetCount();
+        memset(in_row,0,in_size);
+        type=MC_PTP_ISSUE | MC_PTP_SEND;
+        mc_PutLE(in_row+4,&type,4);
+        mc_SetABRefType(in_row,MC_AST_ASSET_REF_TYPE_SPECIAL);
+        in_amounts->Add(in_row);
+    }
+    
+                                                                                // Admin row, coin value if input has admin permission, 0 otherwise
+    if(required & MC_PTP_ADMIN)
+    {
+        in_special_row[6]=in_amounts->GetCount();
+        memset(in_row,0,in_size);
+        type=MC_PTP_ADMIN | MC_PTP_SEND;
+        mc_PutLE(in_row+4,&type,4);
+        mc_SetABRefType(in_row,MC_AST_ASSET_REF_TYPE_SPECIAL);
+        in_amounts->Add(in_row);
+    }
+    
+                                                                                // Activate row, coin value if input has activate permission, 0 otherwise
+    if(required & MC_PTP_ACTIVATE)
+    {
+        in_special_row[7]=in_amounts->GetCount();
+        memset(in_row,0,in_size);
+        type=MC_PTP_ACTIVATE | MC_PTP_SEND;
+        mc_PutLE(in_row+4,&type,4);
+        mc_SetABRefType(in_row,MC_AST_ASSET_REF_TYPE_SPECIAL);
+        in_amounts->Add(in_row);
+    }
+    
+                                                                                // Write row, coin value if input has write permission, 0 otherwise
+    if(required & MC_PTP_WRITE)
+    {
+        in_special_row[8]=in_amounts->GetCount();
+        memset(in_row,0,in_size);
+        type=MC_PTP_WRITE | MC_PTP_SEND;
+        mc_PutLE(in_row+4,&type,4);
+        mc_SetABRefType(in_row,MC_AST_ASSET_REF_TYPE_SPECIAL);
+        in_amounts->Add(in_row);
+    }
+    
+                                                                                // Open row, coin value if input has open permission, 0 otherwise
+    if(required & MC_PTP_CREATE)
+    {
+        in_special_row[9]=in_amounts->GetCount();
+        memset(in_row,0,in_size);
+        type=MC_PTP_CREATE | MC_PTP_SEND;
+        mc_PutLE(in_row+4,&type,4);
+        mc_SetABRefType(in_row,MC_AST_ASSET_REF_TYPE_SPECIAL);
+        in_amounts->Add(in_row);
+    }
+    
+    this_time=mc_TimeNowAsDouble();
+    if(csperf_debug_print)if(vecSend.size())printf("Initialize              : %8.6f\n",this_time-last_time);
+    last_time=this_time;
+    
+    {
+        LOCK2(cs_main, lpWallet->cs_wallet);
+        {
+            this_time=mc_TimeNowAsDouble();
+            if(csperf_debug_print)if(vecSend.size())printf("Lock                    : %8.6f\n",this_time-last_time);
+            last_time=this_time;
+    
+            no_send_coins=false;
+            if(vecSend.size())                                                  // Normal transaction
+            {
+                                                                                // Find coins for relevant assets
+                if(!FindRelevantCoins(lpWallet,vCoins,out_amounts,required,&no_send_coins,in_amounts,in_map,tmp_amounts,in_row,in_size,lpScript,in_special_row,&mapSpecialEntity,strFailReason))
+                {
+                    goto exitlbl;
+                }
+                
+    
+                if(!SelectCoinsToUse(lpCoinsToUse,in_map,in_amounts,in_special_row,strFailReason))
+                {
+                    goto exitlbl;
+                }
+                
+                this_time=mc_TimeNowAsDouble();
+                if(csperf_debug_print)if(vecSend.size())printf("Inputs                  : %8.6f\n",this_time-last_time);
+                if(fDebug>1)LogPrint("mcperf","mcperf: CS: Input Parsing: Time: %8.6f - %d\n", this_time-last_time,out_amounts->GetCount());
+                last_time=this_time;
+    
+                for(int asset=0;asset<out_amounts->GetCount();asset++)
+                {
+                    if(mc_GetABRefType(out_amounts->GetRow(asset)) != MC_AST_ASSET_REF_TYPE_GENESIS)
+                    {
+                        int in_asset_row;
+                        nTotalOutValue=mc_GetABQuantity(out_amounts->GetRow(asset));
+                        in_asset_row=in_amounts->Seek(out_amounts->GetRow(asset));
+        
+                        if((nTotalOutValue > 0) ||                              // Can send 0 amount of specific asset if there are no outputs carrying this asset
+                             ((mc_GetABRefType(out_amounts->GetRow(asset)) == MC_AST_ASSET_REF_TYPE_SPECIAL) &&
+                             (mc_GetLE(out_amounts->GetRow(asset)+4,4) == MC_PTP_SEND)))// But not for native currency, otherwise we can get "no inputs"                                  
+                        {
+                            if(!SelectAssetCoins(lpWallet,nTotalOutValue,vCoins,in_map,in_amounts,in_special_row,in_asset_row,coinControl))
+                            {
+                                strFailReason = _("Insufficient funds");
+                                if(eErrorCode)*eErrorCode=RPC_WALLET_INSUFFICIENT_FUNDS;
+                                if(mc_GetABRefType(out_amounts->GetRow(asset)) == MC_AST_ASSET_REF_TYPE_SPECIAL)
+                                {
+                                    switch(mc_GetLE(out_amounts->GetRow(asset)+4,4))
+                                    {
+                                        case MC_PTP_ISSUE | MC_PTP_SEND:
+                                            if(eErrorCode)*eErrorCode=RPC_INSUFFICIENT_PERMISSIONS;
+                                            strFailReason = _("No unspent output with issue permission");                                         
+                                            break;
+                                        case MC_PTP_CREATE | MC_PTP_SEND:
+                                            if(eErrorCode)*eErrorCode=RPC_INSUFFICIENT_PERMISSIONS;
+                                            strFailReason = _("No unspent output with create permission");                                         
+                                            break;
+                                        case MC_PTP_ACTIVATE | MC_PTP_SEND:
+                                            if(eErrorCode)*eErrorCode=RPC_INSUFFICIENT_PERMISSIONS;
+                                            strFailReason = _("No unspent output with activate or admin permission");                                         
+                                            break;
+                                        case MC_PTP_ADMIN | MC_PTP_SEND:
+                                            if(eErrorCode)*eErrorCode=RPC_INSUFFICIENT_PERMISSIONS;
+                                            strFailReason = _("No unspent output with admin permission");                                         
+                                            break;
+                                        case MC_PTP_WRITE | MC_PTP_SEND:
+                                            if(eErrorCode)*eErrorCode=RPC_INSUFFICIENT_PERMISSIONS;
+                                            strFailReason = _("No unspent output with write permission");                                         
+                                            break;
+                                        case MC_PTP_SEND:
+                                            if(nTotalOutValue > 0)
+                                            {
+                                                if(no_send_coins)
+                                                {
+                                                    if(eErrorCode)*eErrorCode=RPC_INSUFFICIENT_PERMISSIONS;
+                                                    strFailReason = _("Insufficient funds, but there are coins belonging to addresses without send or receive permission.");
+                                                }                                                                                    
+                                            }
+                                            else
+                                            {                        
+                                                if(eErrorCode)*eErrorCode=RPC_WALLET_NO_UNSPENT_OUTPUTS;
+                                                if( MCP_WITH_NATIVE_CURRENCY )
+                                                {
+                                                    strFailReason=_("No unspent outputs are available. Please send a transaction to this node or address first and wait for its confirmation."); 
+                                                }
+                                                else
+                                                {
+                                                    strFailReason=_("No unspent outputs are available. Please send a transaction, with zero amount, to this node or address first and wait for its confirmation.");                                                     
+                                                }
+                                             /*
+                                                if(required & MC_PTP_WRITE)     // publish always comes with addresses set, SEND fails before write
+                                                {
+                                                    strFailReason = _("No unspent output with write permission");                                                                                                 
+                                                }
+                                                else
+                                                {
+                                                    if( (addresses != NULL) && (addresses->size() == 1) )
+                                                    {
+                                                        strFailReason = _("No unspent output from this address");                                                                                      
+                                                    }
+                                                    else
+                                                    {
+                                                        strFailReason = _("No unspent outputs found in this wallet");                                                                                                                                  
+                                                    }
+                                                }
+                                              */ 
+                                            }
+                                            break;
+                                    }
+                                }
+                                else
+                                {
+                                    if(no_send_coins)
+                                    {
+                                        if(eErrorCode)*eErrorCode=RPC_INSUFFICIENT_PERMISSIONS;
+                                        strFailReason = _("Insufficient funds, but there are coins belonging to addresses without send or receive permission.");
+                                    }                                    
+                                }
+                                
+                                goto exitlbl;                            
+                            }                             
+                        }                                                        
+                    }
+                }                
+    
+                this_time=mc_TimeNowAsDouble();
+                if(csperf_debug_print)if(vecSend.size())printf("Select                  : %8.6f\n",this_time-last_time);
+                if(fDebug>1)LogPrint("mcperf","mcperf: CS: Coin Selection: Time: %8.6f  nTotalOutValue %d\n", this_time-last_time,nTotalOutValue);
+                last_time=this_time;                
+            }
+            else
+            {
+                if(!FindCoinsToCombine(lpWallet,vCoins,min_conf,min_inputs,max_inputs,in_amounts,in_map,tmp_amounts,in_row,in_size,lpScript,in_special_row,strFailReason))
+                {
+                                                                                // We didn't find enough coins to combine or error occurred
+                    skip_error_message=true;
+                    goto exitlbl;
+                }                
+            }
+            
+                                                                                // Calculate change
+            if(!CalculateChangeAmounts(lpWallet,vCoins,nValue,out_amounts,required,in_amounts,change_amounts,tmp_amounts,lpScript,in_special_row,&mapSpecialEntity,&usedAddresses,strFailReason))
+            {
+                goto exitlbl;        
+            }
+            
+
+                                                                                // Find change address
+                                                                                //mAy be we don't need the change so the error is ignored
+            FindChangeAddress(lpWallet,change_address,&usedAddresses,reservekey,coinControl,required,&mapSpecialEntity);
+            nFeeRet = 0;
+            
+            min_output=-1;                                                      // Calculate minimal output for the change
+            min_output=MCP_MINIMUM_PER_OUTPUT;
+                                                                                            // Storing selection before pure-native 
+            memcpy(in_amounts->GetRow(in_special_row[2]),in_amounts->GetRow(in_special_row[0]),in_size);
+            nTotalOutValue=nValue;
+            
+            this_time=mc_TimeNowAsDouble();
+            if(csperf_debug_print)if(vecSend.size())printf("Address                 : %8.6f\n",this_time-last_time);
+            last_time=this_time;
+    
+            missing_amount=BuildAssetTransactionFee(lpWallet,wtxNew,change_address,nFeeRet,vecSend,vCoins,in_amounts,change_amounts,required,min_output,tmp_amounts,lpScript,in_special_row,&usedAddresses,flags,strFailReason,deductfee);
+            if(missing_amount<0)                                                // Error
+            {
+                goto exitlbl; 
+            }
+            
+            this_time=mc_TimeNowAsDouble();
+            if(csperf_debug_print)if(vecSend.size())printf("Build                   : %8.6f\n",this_time-last_time);
+            if(fDebug>1)LogPrint("mcperf","mcperf: Transaction Building: Time: %8.6f vecSend.size %d vin %d vout %d\n", this_time-last_time,vecSend.size(),(int)wtxNew.vin.size(),(int)wtxNew.vout.size());
+            last_time=this_time;
+            
+            
+            while(missing_amount > 0)                                           // We still need more native currency
+            {
+                if(vecSend.size() == 0)                                         // We cannot select new coins as only combined outputs are parsed
+                {
+                    if(eErrorCode)*eErrorCode=RPC_WALLET_INSUFFICIENT_FUNDS;
+                    strFailReason = _("Combine transaction requires extra native currency amount");
+                    goto exitlbl;                                                
+                }
+                                                                                // Restoring pure-asset selection
+                memcpy(in_amounts->GetRow(in_special_row[0]),in_amounts->GetRow(in_special_row[2]),in_size);
+                nTotalOutValue+=missing_amount;
+                                                                                // Select coins to cover native currency output and fee
+                if(!SelectAssetCoins(lpWallet,nTotalOutValue,vCoins,in_map,in_amounts,in_special_row,in_special_row[3],coinControl))
+                {
+                    strFailReason = _("Insufficient funds");
+                    if(eErrorCode)*eErrorCode=RPC_WALLET_INSUFFICIENT_FUNDS;
+                    if(no_send_coins)
+                    {
+                        if(eErrorCode)*eErrorCode=RPC_INSUFFICIENT_PERMISSIONS;
+                        strFailReason = _("Insufficient funds, but there are coins belonging to addresses without send permission.");
+                    }
+                    goto exitlbl;                            
+                }                        
+                                                                                // Calculate new change matrix
+                if(!CalculateChangeAmounts(lpWallet,vCoins,nTotalOutValue,out_amounts,required,in_amounts,change_amounts,tmp_amounts,lpScript,in_special_row,&mapSpecialEntity,&usedAddresses,strFailReason))
+                {
+                    goto exitlbl;        
+                }
+                
+                                                                                // Try to build transaction again
+                missing_amount=BuildAssetTransactionFee(lpWallet,wtxNew,change_address,nFeeRet,vecSend,vCoins,in_amounts,change_amounts,required,min_output,tmp_amounts,lpScript,in_special_row,&usedAddresses,flags,strFailReason,deductfee);                
+                if(missing_amount<0)                                            // Error
+                {
+                    if(eErrorCode)*eErrorCode=RPC_WALLET_INSUFFICIENT_FUNDS;
+                    goto exitlbl; 
+                }
+            }            
+        }
+    }
+    
+exitlbl:
+
+    if(in_map)
+    {
+        delete in_map;
+    }
+
+    if(in_row)
+    {
+        mc_Delete(in_row);
+    }
+
+    if(in_amounts)
+    {
+        delete in_amounts;
+    }
+            
+    delete lpScript;
+    delete tmp_amounts;
+    delete change_amounts;
+    delete out_amounts;
+
+    
+    lpWallet->lpAssetGroups->Dump();
+    
+    if(strFailReason.size())
+    {
+        if(fDebug>1)LogPrint("mcatxo","mcatxo: ====== Error: %s\n",strFailReason.c_str());
         if(!skip_error_message)
         {
             LogPrintf("hdac: Coin selection: %s\n",strFailReason.c_str());
@@ -2324,16 +3330,20 @@ exitlbl:
     if(csperf_debug_print)if(vecSend.size())printf("CS Exit                 : %8.6f\n",this_time-last_time);
     last_time=this_time;
     
-    if(fDebug)LogPrint("mcatxo","mcatxo: ====== Created: %s\n",wtxNew.GetHash().ToString().c_str());
+    if(fDebug>1)LogPrint("mcatxo","mcatxo: ====== CreatedDeductFee: %s\n",wtxNew.GetHash().ToString().c_str());
     return true;
 }
 
+
 bool CWallet::CreateHdacTransaction(const vector<pair<CScript, CAmount> >& vecSend,
                                 CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet, std::string& strFailReason, const CCoinControl* coinControl,
-                                const set<CTxDestination>* addresses,int min_conf,int min_inputs,int max_inputs,const vector<COutPoint>* lpCoinsToUse, int *eErrorCode)
+                                const set<CTxDestination>* addresses,int min_conf,int min_inputs,int max_inputs,const vector<COutPoint>* lpCoinsToUse, int *eErrorCode,bool deductfee)
 {
     if( (lpAssetGroups != NULL) && (lpAssetGroups != 0) )
     {
+      if(deductfee)
+        return CreateAssetGroupingTransactionFee(this, vecSend,wtxNew,reservekey,nFeeRet,strFailReason,coinControl,addresses,min_conf,min_inputs,max_inputs,lpCoinsToUse,MC_CSF_ALLOW_SPENDABLE_P2SH | MC_CSF_SIGN, eErrorCode,deductfee);        
+      else
         return CreateAssetGroupingTransaction(this, vecSend,wtxNew,reservekey,nFeeRet,strFailReason,coinControl,addresses,min_conf,min_inputs,max_inputs,lpCoinsToUse,MC_CSF_ALLOW_SPENDABLE_P2SH | MC_CSF_SIGN, eErrorCode);        
     } 
     else
@@ -2341,6 +3351,7 @@ bool CWallet::CreateHdacTransaction(const vector<pair<CScript, CAmount> >& vecSe
         return false;
     }
 }
+
 
 bool CWallet::UpdateUnspentList(const CWalletTx& wtx, bool update_inputs)
 {
@@ -2479,7 +3490,7 @@ bool CWallet::InitializeUnspentList()
             ParseHdacTxOutToBuffer(hash,txout,tmp_amounts,lpScript,NULL,NULL,strError);
             lpAssetGroups->GetGroup(tmp_amounts,1);
         }
-        if(fDebug)LogPrint("hdac","hdac: Found %d assets in %d groups\n",asset_count,lpAssetGroups->GroupCount()-1);
+        if(fDebug>1)LogPrint("hdac","hdac: Found %d assets in %d groups\n",asset_count,lpAssetGroups->GroupCount()-1);
         lpAssetGroups->Dump();
     }        
 
@@ -2494,7 +3505,7 @@ bool CWallet::InitializeUnspentList()
     }
 
 
-    if(fDebug)LogPrint("hdac","hdac: Unspent list initialized: Total: %d, Unspent: %d\n",mapWallet.size(),mapUnspent.size());
+    if(fDebug>1)LogPrint("hdac","hdac: Unspent list initialized: Total: %d, Unspent: %d\n",mapWallet.size(),mapUnspent.size());
 
     return true;        
 }
@@ -2591,7 +3602,7 @@ exitlbl:
     }
         
     this_time=mc_TimeNowAsDouble();
-    if(fDebug)LogPrint("hdac","hdac: Wallet coins: Total: %d, Unspent: %d, Kept: %d, Purged: %d, Skipped: %d, Time: %8.6f\n",total,mapUnspent.size(),should_keep.size(),count,skipped,this_time-last_time);
+    if(fDebug>1)LogPrint("hdac","hdac: Wallet coins: Total: %d, Unspent: %d, Kept: %d, Purged: %d, Skipped: %d, Time: %8.6f\n",total,mapUnspent.size(),should_keep.size(),count,skipped,this_time-last_time);
 }
     
 
@@ -2680,11 +3691,11 @@ bool CWallet::CreateAndCommitOptimizeTransaction(CWalletTx& wtx,std::string& str
     }
     else
     {    
-        if(fDebug)LogPrint("hdac","Committing wallet optimization tx. Inputs: %ld, Outputs: %ld\n",wtx.vin.size(),wtx.vout.size());
+        if(fDebug>1)LogPrint("hdac","Committing wallet optimization tx. Inputs: %ld, Outputs: %ld\n",wtx.vin.size(),wtx.vout.size());
         
         if (CommitTransaction(wtx, reservekey, strFailReason))
         {
-            if(fDebug)LogPrint("hdac","Committing wallet optimization tx completed\n");
+            if(fDebug>1)LogPrint("hdac","Committing wallet optimization tx completed\n");
             return true;
         }
     }    
@@ -2704,7 +3715,7 @@ bool CWallet::OptimizeUnspentList()
         return false;
     }
 
-    if(fDebug)LogPrint("hdac","hdac: Wallet optimization\n");
+    if(fDebug>1)LogPrint("hdac","hdac: Wallet optimization\n");
     
     double start_time=mc_TimeNowAsDouble();
     
@@ -2803,8 +3814,12 @@ bool CWallet::OptimizeUnspentList()
                         result=CreateAndCommitOptimizeTransaction(wtx,strError,lpAddresses,min_conf,min_inputs,max_inputs);
                         if(result)
                         {
-                            LogPrintf("Combine transaction for address %s (%d inputs,%d outputs): %s; Time: %8.3fs\n",
-                                    bitcoin_address.ToString().c_str(), wtx.vin.size(),wtx.vout.size(),wtx.GetHash().GetHex().c_str(),mc_TimeNowAsDouble()-start_time);
+                            if(fDebug>0)LogPrintf("Combine transaction for address %s (%d inputs,%d outputs): %s; Time: %8.3fs\n",
+                                                    bitcoin_address.ToString().c_str(), 
+                                                    wtx.vin.size(),
+                                                    wtx.vout.size(),
+                                                    wtx.GetHash().GetHex().c_str(),
+                                                    mc_TimeNowAsDouble()-start_time);
                         }
                     }
                 }

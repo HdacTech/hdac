@@ -131,20 +131,19 @@ void WalletTxToJSON(const CWalletTx& wtx, Object& entry,bool skipWalletConflicts
     }
 }
 
-
-void SendMoneyToSeveralAddresses(const std::vector<CTxDestination> addresses, CAmount nValue, CWalletTx& wtxNew,mc_Script *dropscript,CScript scriptOpReturn,const std::vector<CTxDestination>& fromaddresses)
+void SendMoneyToSeveralAddresses(const std::vector<CTxDestination> addresses, CAmount nValue, CWalletTx& wtxNew,mc_Script *dropscript,CScript scriptOpReturn,const std::vector<CTxDestination>& fromaddresses,bool deductfee)
 {
     // Check amount
     
-/*    
+    /*    
     if (nValue < 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid amount");
-*/
+    */
     string strError;
     if (pwalletMain->IsLocked())
     {
         strError = "Error: Wallet locked, unable to create transaction!";
-        LogPrintf("SendMoney() : %s", strError);
+        if(fDebug>0)LogPrintf("SendMoney() : %s", strError);
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, strError);
     }
 
@@ -177,7 +176,8 @@ void SendMoneyToSeveralAddresses(const std::vector<CTxDestination> addresses, CA
 
         if(dropscript)
         {
-            if(fDebug)LogPrint("mchnminor","mchn: Sending script with %d OP_DROP element(s)",dropscript->GetNumElements());
+            if(fDebug>1)LogPrint("mchnminor","mchn: Sending script with %d OP_DROP element(s)\n",dropscript->GetNumElements());
+
             if(dropscript->GetNumElements() > MCP_STD_OP_DROP_COUNT )
                 throw JSONRPCError(RPC_INTERNAL_ERROR, "Invalid number of elements in script");
 
@@ -201,13 +201,13 @@ void SendMoneyToSeveralAddresses(const std::vector<CTxDestination> addresses, CA
     CReserveKey reservekey(pwalletMain);
     CAmount nFeeRequired;
     int eErrorCode;
-    if (!pwalletMain->CreateTransaction(scriptPubKeys, nValue, scriptOpReturn, wtxNew, reservekey, nFeeRequired, strError, NULL, lpFromAddresses, 1,-1,-1, NULL, &eErrorCode))
+    if (!pwalletMain->CreateTransaction(scriptPubKeys, nValue, scriptOpReturn, wtxNew, reservekey, nFeeRequired, strError, NULL, lpFromAddresses, 1,-1,-1, NULL, &eErrorCode,deductfee))
     {
-/*        
+        /*        
         if (nValue + nFeeRequired > pwalletMain->GetBalance())
             strError = strprintf("Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds!", FormatMoney(nFeeRequired));
- */ 
-        LogPrintf("SendMoney() : %s\n", strError);
+        */ 
+        if(fDebug>0)LogPrintf("SendMoney() : %s\n", strError);
         throw JSONRPCError(eErrorCode, strError);
     }
     
@@ -224,6 +224,7 @@ void SendMoneyToSeveralAddresses(const std::vector<CTxDestination> addresses, CA
         }                        
     }            
 }
+
 
 vector<CTxDestination> ParseAddresses(string param, bool create_full_list, bool allow_scripthash)
 {

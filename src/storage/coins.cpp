@@ -121,7 +121,7 @@ CCoinsModifier CCoinsViewCache::ModifyCoins(const uint256 &txid) {
     }
     // Assume that whenever ModifyCoins is called, the entry will be modified.
     ret.first->second.flags |= CCoinsCacheEntry::DIRTY;
-    if(fDebug)LogPrint("mccoin","COIN: CH Modify %s\n", txid.ToString().c_str());
+    if(fDebug>2)LogPrint("mccoin","COIN: CH Modify %s\n", txid.ToString().c_str());
 
     return CCoinsModifier(*this, ret.first);
 }
@@ -169,7 +169,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlockIn
                     CCoinsCacheEntry& entry = cacheCoins[it->first];
                     entry.coins.swap(it->second.coins);
                     entry.flags = CCoinsCacheEntry::DIRTY | CCoinsCacheEntry::FRESH;
-                    if(fDebug)LogPrint("mccoin","COIN: CH Write  %s\n", it->first.ToString().c_str());
+                    if(fDebug>2)LogPrint("mccoin","COIN: CH Write  %s\n", it->first.ToString().c_str());
                 }
             } else {
                 if ((itUs->second.flags & CCoinsCacheEntry::FRESH) && it->second.coins.IsPruned()) {
@@ -178,14 +178,14 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlockIn
                     // it from the parent.
                     cacheCoins.erase(itUs);
 
-                    if(fDebug)LogPrint("mccoin","COIN: CH Erase  %s\n", it->first.ToString().c_str());
+                    if(fDebug>2)LogPrint("mccoin","COIN: CH Erase  %s\n", it->first.ToString().c_str());
 
                 } else {
                     // A normal modification.
                     itUs->second.coins.swap(it->second.coins);
                     itUs->second.flags |= CCoinsCacheEntry::DIRTY;
 
-                    if(fDebug)LogPrint("mccoin","COIN: CH Update %s\n", it->first.ToString().c_str());
+                    if(fDebug>2)LogPrint("mccoin","COIN: CH Update %s\n", it->first.ToString().c_str());
 
                 }
             }
@@ -193,7 +193,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlockIn
         else
         {
 
-            if(fDebug)LogPrint("mccoin","COIN: CH Clean! %s\n", it->first.ToString().c_str());            
+            if(fDebug>2)LogPrint("mccoin","COIN: CH Clean! %s\n", it->first.ToString().c_str());            
 
         }
         CCoinsMap::iterator itOld = it++;

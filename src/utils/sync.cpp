@@ -16,8 +16,8 @@
 #ifdef DEBUG_LOCKCONTENTION
 void PrintLockContention(const char* pszName, const char* pszFile, int nLine)
 {
-    LogPrintf("LOCKCONTENTION: %s\n", pszName);
-    LogPrintf("Locker: %s:%d\n", pszFile, nLine);
+    if(fDebug>0)LogPrintf("LOCKCONTENTION: %s\n", pszName);
+    if(fDebug>0)LogPrintf("Locker: %s:%d\n", pszFile, nLine);
 }
 #endif /* DEBUG_LOCKCONTENTION */
 
@@ -63,6 +63,8 @@ static boost::thread_specific_ptr<LockStack> lockstack;
 
 static void potential_deadlock_detected(const std::pair<void*, void*>& mismatch, const LockStack& s1, const LockStack& s2)
 {
+    if(!fDebug)return;
+    
     LogPrintf("POTENTIAL DEADLOCK DETECTED\n");
     LogPrintf("Previous lock order was:\n");
     BOOST_FOREACH (const PAIRTYPE(void*, CLockLocation) & i, s2) {
@@ -87,7 +89,7 @@ static void push_lock(void* c, const CLockLocation& locklocation, bool fTry)
     if (lockstack.get() == NULL)
         lockstack.reset(new LockStack);
 
-    LogPrint("lock", "Locking: %s\n", locklocation.ToString());
+    if(fDebug>1)LogPrint("lock", "Locking: %s\n", locklocation.ToString());
     dd_mutex.lock();
 
     (*lockstack).push_back(std::make_pair(c, locklocation));
@@ -114,7 +116,7 @@ static void push_lock(void* c, const CLockLocation& locklocation, bool fTry)
 
 static void pop_lock()
 {
-    if (fDebug) {
+    if (fDebug>1) {
         const CLockLocation& locklocation = (*lockstack).rbegin()->second;
         LogPrint("lock", "Unlocked: %s\n", locklocation.ToString());
     }

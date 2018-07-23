@@ -714,7 +714,7 @@ void LogAssetTxOut(string message,uint256 hash,int index,unsigned char* assetref
     {
         assetref += "0-0-2";
     }
-    if(fDebug)LogPrint("mcatxo", "mcatxo: %s: %s-%d %s %ld\n",message.c_str(),txid.c_str(),index,assetref.c_str(),quantity);
+    if(fDebug>1)LogPrint("mcatxo", "mcatxo: %s: %s-%d %s %ld\n",message.c_str(),txid.c_str(),index,assetref.c_str(),quantity);
 }
 
 bool AddressCanReceive(CTxDestination address)
@@ -723,7 +723,7 @@ bool AddressCanReceive(CTxDestination address)
     CScriptID *lpScriptID=boost::get<CScriptID> (&address);
     if((lpKeyID == NULL) && (lpScriptID == NULL))
     {
-        LogPrintf("hdac: Invalid address");
+        if(fDebug>0)LogPrintf("hdac: Invalid address");
         return false;                
     }
     unsigned char* ptr=NULL;
@@ -741,8 +741,8 @@ bool AddressCanReceive(CTxDestination address)
     
     if(mc_gState->m_Permissions->CanReceive(NULL,ptr) == 0)
     {
-        LogPrintf("hdac: Destination address doesn't have receive permission: %s\n",
-                addressPrint.ToString().c_str());
+        if(fDebug>0)LogPrintf("hdac: Destination address doesn't have receive permission: %s\n",
+                               addressPrint.ToString().c_str());
         return false;
     }
     

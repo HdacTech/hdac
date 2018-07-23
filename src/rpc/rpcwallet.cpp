@@ -300,7 +300,7 @@ void SendMoney(const CTxDestination &address, CAmount nValue, CWalletTx& wtxNew,
     if (pwalletMain->IsLocked())
     {
         strError = "Error: Wallet locked, unable to create transaction!";
-        LogPrintf("SendMoney() : %s", strError);
+        if(fDebug>0)LogPrintf("SendMoney() : %s", strError);
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, strError);
     }
 
@@ -315,7 +315,7 @@ void SendMoney(const CTxDestination &address, CAmount nValue, CWalletTx& wtxNew,
     if(!pwalletMain->GetKey(lpKeyID, key))
     {
         strError = "Error: Cannot find private key!";
-        LogPrintf("SendMoney() : %s", strError);
+        if(fDebug>0)LogPrintf("SendMoney() : %s", strError);
         throw JSONRPCError(RPC_WALLET_ERROR, strError);
     }
     
@@ -332,7 +332,7 @@ void SendMoney(const CTxDestination &address, CAmount nValue, CWalletTx& wtxNew,
     
     if(dropscript)
     {
-        if(fDebug)LogPrint("hdacminor","hdac: Sending script with %d OP_DROP element(s)",dropscript->GetNumElements());
+        if(fDebug>1)LogPrint("hdacminor","hdac: Sending script with %d OP_DROP element(s)",dropscript->GetNumElements());
         if(dropscript->GetNumElements() > MCP_STD_OP_DROP_COUNT )
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Invalid number of elements in script");
 
@@ -367,7 +367,7 @@ void SendMoney(const CTxDestination &address, CAmount nValue, CWalletTx& wtxNew,
         if (nValue + nFeeRequired > pwalletMain->GetBalance(fImportAddrs))
             strError = strprintf("Error: This transaction requires a transaction fee of at least %s because of its amount, complexity, or use of recently received funds!", FormatMoney(nFeeRequired));
 
-        LogPrintf("SendMoney() : %s\n", strError);
+        if(fDebug>0)LogPrintf("SendMoney() : %s\n", strError);
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strError);        
     }
 
@@ -834,7 +834,7 @@ CAmount GetAccountBalance(const string& strAccount, int nMinDepth, const isminef
 
     if(setAddress.size()<1)
     {
-        LogPrintf("There is no address for account=%s \n",strAccount);
+        if(fDebug>0)LogPrintf("There is no address for account=%s \n",strAccount);
         return 0;
     }
     
@@ -894,7 +894,7 @@ Value getbalance(const Array& params, bool fHelp)
         {
             vector<COutput> vecOutputs;
 
-            pwalletMain->AvailableCoins(vecOutputs, false, NULL, false,true, !(filter & ISMINE_WATCH_ONLY));
+            pwalletMain->AvailableCoins(vecOutputs, false, NULL, false,true, 0,NULL,MC_CSF_ALLOW_SPENDABLE_P2SH, !(filter & ISMINE_WATCH_ONLY));
 
             BOOST_FOREACH(const COutput& out, vecOutputs) 
             {
@@ -2127,7 +2127,7 @@ Value getwalletinfo(const Array& params, bool fHelp)
     }
     vector<COutput> vecOutputs;
 
-    pwalletMain->AvailableCoins(vecOutputs, false, NULL, false,true, fImportAddrs);
+    pwalletMain->AvailableCoins(vecOutputs, false, NULL, false,true, 0, NULL,MC_CSF_ALLOW_SPENDABLE_P2SH, fImportAddrs);
     
     obj.push_back(Pair("utxocount",  (int)vecOutputs.size()));                
     obj.push_back(Pair("keypoololdest", pwalletMain->GetOldestKeyPoolTime()));

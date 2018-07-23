@@ -1179,7 +1179,7 @@ Value getassetbalances(const Array& params, bool fHelp)
     vector<COutput> vecOutputs;
     assert(pwalletMain != NULL);
 
-    pwalletMain->AvailableCoins(vecOutputs, false, NULL, fUnlockedOnly,true, !(filter & ISMINE_WATCH_ONLY));
+    pwalletMain->AvailableCoins(vecOutputs, false, NULL, fUnlockedOnly,true, 0,NULL,MC_CSF_ALLOW_SPENDABLE_P2SH, !(filter & ISMINE_WATCH_ONLY));
     
     BOOST_FOREACH(const COutput& out, vecOutputs) {
 

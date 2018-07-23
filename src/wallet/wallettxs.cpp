@@ -224,7 +224,7 @@ string mc_WalletTxs::Summary()
 {
     if(m_Database->m_Imports->m_Block != m_Database->m_DBStat.m_Block)
     {
-        LogPrintf("wtxs: ERROR! Wallet block count mismatch: %d -> %d\n",m_Database->m_Imports->m_Block != m_Database->m_DBStat.m_Block);
+        if(fDebug>0)LogPrintf("wtxs: ERROR! Wallet block count mismatch: %d -> %d\n",m_Database->m_Imports->m_Block != m_Database->m_DBStat.m_Block);
     }
     return strprintf("Block: %d, Txs: %d, Unconfirmed: %d, UTXOs: %d",
             m_Database->m_Imports->m_Block,
@@ -413,10 +413,10 @@ int mc_WalletTxs::BeforeCommit(mc_TxImport *import)
     
     if(err)
     {
-        LogPrintf("wtxs: BeforeCommit: Error: %d\n",err);       
+        if(fDebug>0)LogPrintf("wtxs: BeforeCommit: Error: %d\n",err);       
         m_Database->Dump("Error in BeforeCommit");
     }
-    if(fDebug)LogPrint("wallet","wtxs: BeforeCommit: Import: %d, Block: %d\n",imp->m_ImportID,imp->m_Block);
+    if(fDebug>1)LogPrint("wallet","wtxs: BeforeCommit: Import: %d, Block: %d\n",imp->m_ImportID,imp->m_Block);
     
     m_Database->UnLock();
     return err;    
@@ -483,7 +483,7 @@ int mc_WalletTxs::Commit(mc_TxImport *import)
                 }
             }
  */ 
-            if(fDebug)LogPrint("wallet","wtxs: Unconfirmed wallet transactions: %d\n",m_UnconfirmedSends.size());
+            if(fDebug>1)LogPrint("wallet","wtxs: Unconfirmed wallet transactions: %d\n",m_UnconfirmedSends.size());
         }
     }
        
@@ -491,10 +491,10 @@ int mc_WalletTxs::Commit(mc_TxImport *import)
     
     if(err)
     {
-        LogPrintf("wtxs: Commit: Error: %d\n",err);        
+        if(fDebug>0)LogPrintf("wtxs: Commit: Error: %d\n",err);        
         m_Database->Dump("Error in Commit");
     }
-    if(fDebug)LogPrint("wallet","wtxs: Commit: Import: %d, Block: %d\n",imp->m_ImportID,imp->m_Block);
+    if(fDebug>1)LogPrint("wallet","wtxs: Commit: Import: %d, Block: %d\n",imp->m_ImportID,imp->m_Block);
     m_Database->UnLock();
     return err;        
 }
@@ -557,7 +557,7 @@ int mc_WalletTxs::CleanUpAfterBlock(mc_TxImport *import,int block,int prev_block
             RemoveUnconfirmedSends(prev_block-MC_TDB_UTXO_SET_WINDOW_SIZE);
         }
     }
-    if(fDebug)LogPrint("wallet","wtxs: CleanUpAfterBlock: Import: %d, Block: %d\n",imp->m_ImportID,imp->m_Block);
+    if(fDebug>1)LogPrint("wallet","wtxs: CleanUpAfterBlock: Import: %d, Block: %d\n",imp->m_ImportID,imp->m_Block);
     m_Database->UnLock();
     
     return err;
@@ -682,7 +682,7 @@ int mc_WalletTxs::RollBackSubKeys(mc_TxImport *import,int block,mc_TxEntityStat 
                     CWalletTx wtx=GetInternalWalletTx(hash,NULL,&err);  // Tx to delete
                     if(err)
                     {
-                        LogPrintf("wtxs: RollBackSubKeys: Couldn't find tx %s, error: %d\n",hash.ToString().c_str(),err);        
+                        if(fDebug>0)LogPrintf("wtxs: RollBackSubKeys: Couldn't find tx %s, error: %d\n",hash.ToString().c_str(),err);        
                         fInBlocks=false;                                                                
                     }
                     else
@@ -777,7 +777,7 @@ int mc_WalletTxs::RollBackSubKeys(mc_TxImport *import,int block,mc_TxEntityStat 
         {
             if(err)
             {
-                LogPrintf("wtxs: RollBackSubKeys: Error on getting rollback tx list: %d\n",err);        
+                if(fDebug>0)LogPrintf("wtxs: RollBackSubKeys: Error on getting rollback tx list: %d\n",err);        
             }
             fInBlocks=false;            
         }
@@ -861,7 +861,7 @@ int mc_WalletTxs::RollBack(mc_TxImport *import,int block)
     }
     if(err)
     {
-        LogPrintf("wtxs: RollBack: Error when rolling back soubkeys: %d\n",err);        
+        if(fDebug>0)LogPrintf("wtxs: RollBack: Error when rolling back soubkeys: %d\n",err);        
     }
     if(lpSubKeyEntRowBuffer)
     {
@@ -912,7 +912,7 @@ int mc_WalletTxs::RollBack(mc_TxImport *import,int block)
                             CWalletTx wtx=GetInternalWalletTx(hash,NULL,&err);  // Tx to delete
                             if(err)
                             {
-                                LogPrintf("wtxs: RollBack: Couldn't find tx %s, error: %d\n",hash.ToString().c_str(),err);        
+                                if(fDebug>0)LogPrintf("wtxs: RollBack: Couldn't find tx %s, error: %d\n",hash.ToString().c_str(),err);        
                                 fInBlocks=false;                                                                
                             }
                             else
@@ -1064,7 +1064,7 @@ int mc_WalletTxs::RollBack(mc_TxImport *import,int block)
                                         }
                                     }
                                 }                                
-                                if(fDebug)LogPrint("wallet","wtxs: Removing tx %s, block %d, flags: %08X, import %d\n",hash.ToString().c_str(),entrow->m_Block,entrow->m_Flags,imp->m_ImportID);
+                                if(fDebug>1)LogPrint("wallet","wtxs: Removing tx %s, block %d, flags: %08X, import %d\n",hash.ToString().c_str(),entrow->m_Block,entrow->m_Flags,imp->m_ImportID);
                                 if(wtx.IsCoinBase())
                                 {
                                     removed_coinbases.push_back(hash);
@@ -1084,7 +1084,7 @@ int mc_WalletTxs::RollBack(mc_TxImport *import,int block)
                 {
                     if(err)
                     {
-                        LogPrintf("wtxs: RollBack: Error on getting rollback tx list: %d\n",err);        
+                        if(fDebug>0)LogPrintf("wtxs: RollBack: Error on getting rollback tx list: %d\n",err);        
                     }
                     fInBlocks=false;
                 }
@@ -1128,10 +1128,10 @@ int mc_WalletTxs::RollBack(mc_TxImport *import,int block)
     }
     if(err)
     {
-        LogPrintf("wtxs: RollBack: Error: %d\n",err);        
+        if(fDebug>0)LogPrintf("wtxs: RollBack: Error: %d\n",err);        
         m_Database->Dump("Error in RollBack");
     }
-    if(fDebug)LogPrint("wallet","wtxs: RollBack: Import: %d, Block: %d\n",imp->m_ImportID,imp->m_Block);
+    if(fDebug>1)LogPrint("wallet","wtxs: RollBack: Import: %d, Block: %d\n",imp->m_ImportID,imp->m_Block);
     m_Database->UnLock();
     return err;            
 }
@@ -1245,7 +1245,7 @@ int mc_WalletTxs::Unsubscribe(mc_Buffer* lpEntities)
     }
     m_Database->Lock(1,0);    
     err=m_Database->Unsubscribe(lpEntities);
-    if(fDebug)LogPrint("wallet","wtxs: Unsubscribed from %d entities\n",lpEntities->GetCount());
+    if(fDebug>1)LogPrint("wallet","wtxs: Unsubscribed from %d entities\n",lpEntities->GetCount());
     m_Database->UnLock();
     return err;                        
 }
@@ -1269,7 +1269,7 @@ mc_TxImport *mc_WalletTxs::StartImport(mc_Buffer *lpEntities,int block,int *err)
     {
         m_UTXOs[imp-m_Database->m_Imports].clear();
     }
-    if(fDebug)LogPrint("wallet","wtxs: StartImport: Import: %d, Block: %d\n",imp->m_ImportID,imp->m_Block);
+    if(fDebug>1)LogPrint("wallet","wtxs: StartImport: Import: %d, Block: %d\n",imp->m_ImportID,imp->m_Block);
     m_Database->UnLock();
     return imp;                
 }
@@ -1332,7 +1332,7 @@ int mc_WalletTxs::CompleteImport(mc_TxImport *import)
                                                                                 
     if(m_Database->m_DBStat.m_Block != m_Database->m_Imports->m_Block)
     {
-        LogPrintf("wtxs: Internal error, block count mismatch: %d-%d\n",m_Database->m_DBStat.m_Block, m_Database->m_Imports->m_Block);        
+        if(fDebug>0)LogPrintf("wtxs: Internal error, block count mismatch: %d-%d\n",m_Database->m_DBStat.m_Block, m_Database->m_Imports->m_Block);        
         err=MC_ERR_INTERNAL_ERROR;
     }
 
@@ -1411,9 +1411,9 @@ int mc_WalletTxs::CompleteImport(mc_TxImport *import)
     }
     if(err)
     {
-        LogPrintf("wtxs: CompleteImport: Error: %d\n",err);        
+        if(fDebug>0)LogPrintf("wtxs: CompleteImport: Error: %d\n",err);        
     }
-    if(fDebug)LogPrint("wallet","wtxs: CompleteImport: Import: %d, Block: %d\n",gen,m_Database->m_DBStat.m_Block);
+    if(fDebug>1)LogPrint("wallet","wtxs: CompleteImport: Import: %d, Block: %d\n",gen,m_Database->m_DBStat.m_Block);
     m_Database->UnLock();
     return err;                
 }
@@ -1437,7 +1437,7 @@ int mc_WalletTxs::DropImport(mc_TxImport *import)
     {
         RemoveUTXOMap(import->m_ImportID,import->m_Block);        
     }
-    if(fDebug)LogPrint("wallet","wtxs: DropImport: Import: %d, Block: %d\n",gen,m_Database->m_DBStat.m_Block);
+    if(fDebug>1)LogPrint("wallet","wtxs: DropImport: Import: %d, Block: %d\n",gen,m_Database->m_DBStat.m_Block);
     m_Database->UnLock();
     return err;                    
 }
@@ -1724,7 +1724,7 @@ int mc_WalletTxs::LoadUTXOMap(int import_id,int block)
     
     if(fHan == NULL)
     {
-        LogPrintf("wtxs: Cannot open unspent outputs file\n");
+        if(fDebug>0)LogPrintf("wtxs: Cannot open unspent outputs file\n");
         if(block > 0)
         {
             return MC_ERR_NOERROR;
@@ -1750,7 +1750,7 @@ int mc_WalletTxs::LoadUTXOMap(int import_id,int block)
     
     m_UTXOs[import_pos]=mapOut;
     
-    if(fDebug)LogPrint("wallet","wtxs: Loaded %u unspent outputs for import %d\n",m_UTXOs[import_pos].size(),import_pos);
+    if(fDebug>1)LogPrint("wallet","wtxs: Loaded %u unspent outputs for import %d\n",m_UTXOs[import_pos].size(),import_pos);
             
     return MC_ERR_NOERROR;
 }
@@ -2561,7 +2561,7 @@ int mc_WalletTxs::AddTx(mc_TxImport *import,const CWalletTx& tx,int block,CDiskT
     }
     
     
-    if(fDebug)LogPrint("wallet","wtxs: Found %d entities in tx %s, flags: %08X, import %d\n",imp->m_TmpEntities->GetCount(),tx.GetHash().ToString().c_str(),flags,imp->m_ImportID);
+    if(fDebug>1)LogPrint("wallet","wtxs: Found %d entities in tx %s, flags: %08X, import %d\n",imp->m_TmpEntities->GetCount(),tx.GetHash().ToString().c_str(),flags,imp->m_ImportID);
     err=m_Database->AddTx(imp,(unsigned char*)&hash,(unsigned char*)&ss[0],txsize,txfullsize,block,block_file,block_offset,block_tx_offset,block_tx_index,flags,timestamp,imp->m_TmpEntities);
     if(err == MC_ERR_NOERROR)                                                   // Adding tx to unconfirmed send
     {
@@ -2632,7 +2632,7 @@ exitlbl:
     
     if(err)
     {
-        LogPrintf("wtxs: AddTx  Error: %d\n",err);        
+        if(fDebug>0)LogPrintf("wtxs: AddTx  Error: %d\n",err);        
     }
     if(lockres == 0)
     {

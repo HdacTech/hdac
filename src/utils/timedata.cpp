@@ -56,7 +56,7 @@ void AddTimeData(const CNetAddr& ip, int64_t nTime)
     // Add data
     static CMedianFilter<int64_t> vTimeOffsets(200,0);
     vTimeOffsets.input(nOffsetSample);
-    LogPrintf("Added time data, samples %d, offset %+d (%+d minutes)\n", vTimeOffsets.size(), nOffsetSample, nOffsetSample/60);
+    if(fDebug>0)LogPrintf("Added time data, samples %d, offset %+d (%+d minutes)\n", vTimeOffsets.size(), nOffsetSample, nOffsetSample/60);
 
     // There is a known issue here (see issue #4521):
     //
@@ -102,16 +102,16 @@ void AddTimeData(const CNetAddr& ip, int64_t nTime)
                     fDone = true;
                     string strMessage = _("Warning: Please check that your computer's date and time are correct! If your clock is wrong Hdac Core will not work properly.");	// HDAC
                     strMiscWarning = strMessage;
-                    LogPrintf("*** %s\n", strMessage);
+                    if(fDebug>0)LogPrintf("*** %s\n", strMessage);
                     uiInterface.ThreadSafeMessageBox(strMessage, "", CClientUIInterface::MSG_WARNING);
                 }
             }
         }
-        if (fDebug) {
+        if (fDebug>1) {
             BOOST_FOREACH(int64_t n, vSorted)
                 LogPrintf("%+d  ", n);
             LogPrintf("|  ");
         }
-        LogPrintf("nTimeOffset = %+d  (%+d minutes)\n", nTimeOffset, nTimeOffset/60);
+        if(fDebug>0)LogPrintf("nTimeOffset = %+d  (%+d minutes)\n", nTimeOffset, nTimeOffset/60);
     }
 }

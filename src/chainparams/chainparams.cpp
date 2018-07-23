@@ -577,6 +577,7 @@ public:
     
     void SetHdacRuntimeParams()
     {
+        fDebug = GetArg("-debug", 1);
         fMineBlocksOnDemand = GetBoolArg("-mineblocksondemand", false);
         fMiningRequiresPeers = (mc_gState->m_NetworkParams->GetInt64Param("miningrequirespeers") != 0);
         fMiningRequiresPeers=GetBoolArg("-miningrequirespeers", fMiningRequiresPeers);        

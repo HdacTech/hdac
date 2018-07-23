@@ -31,7 +31,7 @@ extern int64_t COIN;
 extern unsigned int MIN_RELAY_TX_FEE;
 /* HDAC END */
 
-void SendMoneyToSeveralAddresses(const std::vector<CTxDestination> addresses, CAmount nValue, CWalletTx& wtxNew,mc_Script *dropscript,CScript scriptOpReturn,const std::vector<CTxDestination>& fromaddresses);
+void SendMoneyToSeveralAddresses(const std::vector<CTxDestination> addresses, CAmount nValue, CWalletTx& wtxNew,mc_Script *dropscript,CScript scriptOpReturn,const std::vector<CTxDestination>& fromaddresses,bool deductfee=0);
 vector<CTxDestination> ParseAddresses(string param, bool create_full_list, bool allow_scripthash);
 void FindAddressesWithPublishPermission(std::vector<CTxDestination>& fromaddresses,mc_EntityDetails *stream_entity);
 set<string> ParseAddresses(Value param, isminefilter filter);

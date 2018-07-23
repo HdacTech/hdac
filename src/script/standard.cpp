@@ -115,7 +115,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
                     }
                     if(d)
                     {
-                        //LogPrint("hdacminor","hdac: %d OP_DROP element(s) found in script\n",d);
+                        //if(fDebug>1)LogPrint("hdacminor","hdac: %d OP_DROP element(s) found in script\n",d);
                     }
                     return true;
                 }

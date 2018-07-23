@@ -110,8 +110,8 @@ Value grantoperation(const Array& params)
     if (entity_identifier.size())
     {        
         ParseEntityIdentifier(entity_identifier,&entity, MC_ENT_TYPE_ANY);           
-        LogPrintf("hdac: Granting %s permission(s) to address %s (%ld-%ld), Entity TxID: %s, Name: %s\n",permission_type,params[1].get_str(),from,to,
-                ((uint256*)entity.GetTxID())->ToString().c_str(),entity.GetName());
+        if(fDebug>0)LogPrintf("hdac: Granting %s permission(s) to address %s (%ld-%ld), Entity TxID: %s, Name: %s\n",permission_type,params[1].get_str(),from,to,
+                               ((uint256*)entity.GetTxID())->ToString().c_str(),entity.GetName());
         
         type=mc_gState->m_Permissions->GetPermissionType(permission_type.c_str(),entity.GetEntityType());
         
@@ -127,7 +127,7 @@ Value grantoperation(const Array& params)
         if(type == 0)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid permission");
         
-        LogPrintf("hdac: Granting %s permission(s) to address %s (%ld-%ld)\n",permission_type,params[1].get_str(),from,to);
+        if(fDebug>0)LogPrintf("hdac: Granting %s permission(s) to address %s (%ld-%ld)\n",permission_type,params[1].get_str(),from,to);
     }
     
     
@@ -507,7 +507,7 @@ Value listpermissions(const Array& params, bool fHelp)
             if(((lpKeyID == NULL) && (lpScriptID == NULL)))
             {
                 mc_gState->m_Permissions->FreePermissionList(permissions);
-                LogPrintf("hdac: Invalid address");
+                if(fDebug>0)LogPrintf("hdac: Invalid address");
                 return false;                
             }
             

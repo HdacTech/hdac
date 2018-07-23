@@ -90,7 +90,7 @@ bool VerifyBlockWindow(const CBlock& block, CNode* pfrom)
 
 	if(pfrom != NULL && diffBlkTime > (MCP_TARGET_BLOCK_TIME*HDAC_TARGET_BLOCK_TIME_MULTIPLE))	// CIH
 	{
-		if(fDebug)
+		if(fDebug>0)
 		{
 			std::string msg = strprintf("\t>> BLOCK TIME DIFF: %d BLK T: %d ADJ T: %d RCV FROM: %s\nBLOCK_TIME: %d(sec)", diffBlkTime, blockTime, now, (pfrom == NULL ? "ME":">>>"+pfrom->addr.ToString()), MCP_TARGET_BLOCK_TIME);
 			LogPrintf("hdac: %s\n", msg);
@@ -104,8 +104,7 @@ bool VerifyBlockWindow(const CBlock& block, CNode* pfrom)
 	if(strMiner.length()<0x20)
 	{
 		std::string msg = strprintf("%s Miner address is invalid. ADDR=%s", (pfrom == NULL ? "ME": ">>>"+pfrom->addr.ToString()), strMiner);
-		LogPrintf("hdac: %s\n", msg);
-		//if(fDebug)std::cout << std::endl << msg << std::endl;
+		if(fDebug>0)LogPrintf("hdac: %s\n", msg);
 
 		return false;
 	}
@@ -135,18 +134,16 @@ bool VerifyBlockWindow(const CBlock& block, CNode* pfrom)
 		if(fRet)
 		{
 			std::string msg = strprintf("%s Mining Blackout mode was applied... MINER: %s CONTINUITY: %d", (pfrom == NULL ? "ME": ">>>"+pfrom->addr.ToString()), strMiner, miningContinuity);
-			LogPrintf("hdac: %s\n", msg);
-			//if(fDebug) std::cout << std::endl << msg << std::endl;
+			if(fDebug>0)LogPrintf("hdac: %s\n", msg);
 
 			return fRet;
 		}
 	}
 
-	if(fDebug)
+	if(fDebug>0)
 	{
 		std::string msg = strprintf("%s BLOCK TIME DIFF: %d BLK T: %d ADJ T: %d  TARGET_BLOCK_TIME: %d(sec)", (pfrom == NULL ? "":">>>"+pfrom->addr.ToString()), diffBlkTime, blockTime, now, MCP_TARGET_BLOCK_TIME);
 		LogPrintf("hdac: %s\n", msg);
-		//std::cout << msg << std::endl;
 	}
 
 	return CheckBlockWindow(strMiner);
@@ -185,8 +182,7 @@ bool IsMiningBlackout()
 		ret = (wz<nf ? true : false);
 
 		std::string msg = strprintf("IsMiningBlackout? %s. DIFF TM: %d(sec) WZ: %d NF: %d", ret?"true":"false", diffBlkTime, wz, nf );
-		LogPrintf("hdac: %s\n", msg);
-		//if(fDebug) std::cout << std::endl << msg << std::endl;
+		if(fDebug>0)LogPrintf("hdac: %s\n", msg);
 
 		return ret;
 	}
@@ -204,11 +200,10 @@ bool CheckBlockWindow(std::string strMiner)
 
 	if(miningDepth<0)
 	{
-		if(fDebug)
+		if(fDebug>0)
 		{
 			std::string msg = strprintf("WZ: %d MINER: %s M-DEPTH: %d", wz, strMiner, miningDepth);
 			LogPrintf("hdac: %s\n", msg);
-			//std::cout << msg << std::endl;
 		}
 
 		return true;
@@ -216,21 +211,19 @@ bool CheckBlockWindow(std::string strMiner)
 
 	if(wz>miningDepth)
 	{
-		if(fDebug)
+		if(fDebug>0)
 		{
 			std::string msg = strprintf("CheckBlockWindow FALSE. WZ: %d > M-DEPTH: %d, MINER: %s", wz, miningDepth, strMiner);
 			LogPrintf("hdac: %s\n", msg);
-			//std::cout << msg << std::endl;
 		}
 
 		return false;
 	}
 
-	if(fDebug)
+	if(fDebug>0)
 	{
 		std::string msg = strprintf("WZ: %d MINER: %s M-DEPTH: %d", wz, strMiner, miningDepth);
 		LogPrintf("hdac: %s\n", msg);
-		//std::cout << msg << std::endl;
 	}
 
 	return true;
@@ -481,8 +474,7 @@ int GetNodeFactor(int depth)
 		if(!ReadBlockFromDisk(block, pindex))
 		{
 			std::string msg = "Can't read block from disk";
-			LogPrintf("hdac: %s\n", msg);
-			//if(fDebug)std::cout << msg << std::endl;
+			if(fDebug>0)LogPrintf("hdac: %s\n", msg);
 			continue;
 		}
 
@@ -500,8 +492,7 @@ int GetNodeFactor(int depth)
 			if(!ExtractDestinations(prevScript,whichType,addressRets,nRequiredRet))
 			{
 				std::string msg = "ExtractDestination() fail.";
-				LogPrintf("hdac: %s\n", msg);
-				//if(fDebug)std::cout << msg << std::endl;
+				if(fDebug>0)LogPrintf("hdac: %s\n", msg);
 			}
 			else
 			{
@@ -587,8 +578,7 @@ int GetNodeFactor(int depth, int nStartDepth)  		// HDAC
 		if(!ReadBlockFromDisk(block, pindex))
 		{
 			std::string msg = "Can't read block from disk";
-			LogPrintf("hdac: %s\n", msg);
-			//if(fDebug)std::cout << msg << std::endl;
+			if(fDebug>0)LogPrintf("hdac: %s\n", msg);
 			continue;
 		}
 
@@ -606,8 +596,7 @@ int GetNodeFactor(int depth, int nStartDepth)  		// HDAC
 			if(!ExtractDestinations(prevScript,whichType,addressRets,nRequiredRet))
 			{
 				std::string msg = "ExtractDestination() fail.";
-				LogPrintf("hdac: %s\n", msg);
-				//if(fDebug)std::cout << msg << std::endl;
+				if(fDebug>0)LogPrintf("hdac: %s\n", msg);
 			}
 			else
 			{
@@ -649,8 +638,7 @@ int GetMiningDepth(const std::string strAddr)
 		if(!ReadBlockFromDisk(block, pindex))
 		{
 			std::string msg = "Can't read block from disk";
-			LogPrintf("hdac: %s\n", msg);
-			//if(fDebug)std::cout << msg << std::endl;
+			if(fDebug>0)LogPrintf("hdac: %s\n", msg);
 			continue;
 		}
 
@@ -666,8 +654,7 @@ int GetMiningDepth(const std::string strAddr)
 			if(!ExtractDestinations(prevScript,whichType,addressRets,nRequiredRet))
 			{
 				std::string msg = "ExtractDestination() fail.";
-				LogPrintf("hdac: %s\n", msg);
-				//if(fDebug)std::cout << msg << std::endl;
+				if(fDebug>0)LogPrintf("hdac: %s\n", msg);
 			}
 			else
 			{
@@ -707,8 +694,7 @@ int GetMiningContinuity(const std::string strAddr)
 		if(!ReadBlockFromDisk(block, pindex))
 		{
 			std::string msg = "Can't read block from disk";
-			LogPrintf("hdac: %s\n", msg);
-			//if(fDebug)std::cout << msg << std::endl;
+			if(fDebug>0)LogPrintf("hdac: %s\n", msg);
 			continue;
 		}
 
@@ -724,8 +710,7 @@ int GetMiningContinuity(const std::string strAddr)
 			if(!ExtractDestinations(prevScript,whichType,addressRets,nRequiredRet))
 			{
 				std::string msg = "ExtractDestination() fail.";
-				LogPrintf("hdac: %s\n", msg);
-				//if(fDebug)std::cout << msg << std::endl;
+				if(fDebug>0)LogPrintf("hdac: %s\n", msg);
 			}
 			else
 			{
@@ -778,8 +763,7 @@ std::string GetCoinbaseAddress(const CBlock& block)
 		if(!ExtractDestinations(prevScript,whichType,addressRets,nRequiredRet))
 		{
 			std::string msg = "ExtractDestination() fail.";
-			LogPrintf("hdac: %s\n", msg);
-			//if(fDebug)std::cout << msg << std::endl;
+			if(fDebug>0)LogPrintf("hdac: %s\n", msg);
 		}
 		else
 		{
@@ -982,7 +966,7 @@ void PrintBlockInfo(CNode* pfrom, CBlock* pblock)	// CIH
  	{
  		if(IsMiningBlackout())
  		{
- 			if(fDebug)LogPrint("%s : check_ePoWRule(%s) FAIL. WZ: %d NF: %d ", __func__, strMinerAddress, wz, nf);
+ 			if(fDebug>1)LogPrint("%s : check_ePoWRule(%s) FAIL. WZ: %d NF: %d ", __func__, strMinerAddress, wz, nf);
  			return false;
  		}
  		return true;

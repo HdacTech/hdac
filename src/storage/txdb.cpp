@@ -18,12 +18,12 @@ using namespace std;
 void static BatchWriteCoins(CLevelDBBatch &batch, const uint256 &hash, const CCoins &coins) {
     if (coins.IsPruned())
     {
-        if(fDebug)LogPrint("mccoin", "COIN: DB Erase  %s\n", hash.ToString().c_str());
+        if(fDebug>2)LogPrint("mccoin", "COIN: DB Erase  %s\n", hash.ToString().c_str());
         batch.Erase(make_pair('c', hash));
     }
     else
     {
-        if(fDebug)LogPrint("mccoin", "COIN: DB Write  %s\n", hash.ToString().c_str());
+        if(fDebug>2)LogPrint("mccoin", "COIN: DB Write  %s\n", hash.ToString().c_str());
         batch.Write(make_pair('c', hash), coins);
     }
 }
@@ -66,7 +66,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) {
     if (hashBlock != uint256(0))
         BatchWriteHashBestChain(batch, hashBlock);
 
-    if(fDebug)LogPrint("coindb", "Committing %u changed transactions (out of %u) to coin database...\n", (unsigned int)changed, (unsigned int)count);
+    if(fDebug>1)LogPrint("coindb", "Committing %u changed transactions (out of %u) to coin database...\n", (unsigned int)changed, (unsigned int)count);
     return db.WriteBatch(batch);
 }
 

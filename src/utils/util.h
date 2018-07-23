@@ -30,7 +30,7 @@
 
 extern std::map<std::string, std::string> mapArgs;
 extern std::map<std::string, std::vector<std::string> > mapMultiArgs;
-extern bool fDebug;
+extern int fDebug;
 extern bool fPrintToConsole;
 extern bool fPrintToDebugLog;
 extern bool fServer;
@@ -179,7 +179,7 @@ template <typename Callable> void LoopForever(const char* name,  Callable func, 
 {
     std::string s = strprintf("bitcoin-%s", name);
     RenameThread(s.c_str());
-    LogPrintf("%s thread start\n", name);
+    if(fDebug>0)LogPrintf("%s thread start\n", name);
     try
     {
         while (1)
@@ -190,7 +190,7 @@ template <typename Callable> void LoopForever(const char* name,  Callable func, 
     }
     catch (boost::thread_interrupted)
     {
-        LogPrintf("%s thread stop\n", name);
+        if(fDebug>0)LogPrintf("%s thread stop\n", name);
         throw;
     }
     catch (std::exception& e) {
@@ -212,13 +212,13 @@ template <typename Callable> void TraceThread(const char* name,  Callable func)
     RenameThread(s.c_str());
     try
     {
-        LogPrintf("%s thread start\n", name);
+        if(fDebug>0)LogPrintf("%s thread start\n", name);
         func();
-        LogPrintf("%s thread exit\n", name);
+        if(fDebug>0)LogPrintf("%s thread exit\n", name);
     }
     catch (boost::thread_interrupted)
     {
-        LogPrintf("%s thread interrupt\n", name);
+        if(fDebug>0)LogPrintf("%s thread interrupt\n", name);
         throw;
     }
     catch (std::exception& e) {

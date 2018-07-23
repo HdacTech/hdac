@@ -52,7 +52,7 @@ bool ReplayMemPool(CTxMemPool& pool, int from,bool accept)
                     string removed_type="";
                     list<CTransaction> removed;
                     removed_type="banned";                                    
-                    LogPrintf("mchn: Tx %s removed from the mempool (%s), reason: %s\n",tx.GetHash().ToString().c_str(),removed_type.c_str(),reason.c_str());
+                    if(fDebug>0)LogPrintf("mchn: Tx %s removed from the mempool (%s), reason: %s\n",tx.GetHash().ToString().c_str(),removed_type.c_str(),reason.c_str());
                     pool.remove(tx, removed, true, "replay");                    
                 }
             }
@@ -63,7 +63,7 @@ bool ReplayMemPool(CTxMemPool& pool, int from,bool accept)
     
     int total_txs=pool.hashList->m_Count;
     
-    LogPrint("hdac", "hdac: Replaying memory pool (%d new transactions, total %d)\n",total_txs-from,total_txs);
+    if(fDebug>0)LogPrint("hdac", "hdac: Replaying memory pool (%d new transactions, total %d)\n",total_txs-from,total_txs);
     mc_gState->m_Permissions->MempoolPermissionsCopy();
     
     for(pos=from;pos<pool.hashList->m_Count;pos++)
@@ -113,7 +113,7 @@ bool ReplayMemPool(CTxMemPool& pool, int from,bool accept)
 
             if(removed_type.size())
             {
-                LogPrintf("hdac: Tx %s removed from the mempool (%s), reason: %s\n",tx.GetHash().ToString().c_str(),removed_type.c_str(),reason.c_str());
+                if(fDebug>0)LogPrintf("hdac: Tx %s removed from the mempool (%s), reason: %s\n",tx.GetHash().ToString().c_str(),removed_type.c_str(),reason.c_str());
                 pool.remove(tx, removed, true, "replay");                    
             }
             else
@@ -122,7 +122,7 @@ bool ReplayMemPool(CTxMemPool& pool, int from,bool accept)
                 {
                     removed_type="error";
                     reason="wallet";
-                    LogPrintf("hdac: Tx %s removed from the mempool (%s), reason: %s\n",tx.GetHash().ToString().c_str(),removed_type.c_str(),reason.c_str());
+                    if(fDebug>0)LogPrintf("hdac: Tx %s removed from the mempool (%s), reason: %s\n",tx.GetHash().ToString().c_str(),removed_type.c_str(),reason.c_str());
                     pool.remove(tx, removed, true, "replay");                                        
                 }
             }
@@ -287,7 +287,7 @@ bool VerifyBlockSignature(CBlock *block,bool force)
 
 			break;
             default:
-                LogPrintf("hdac: Invalid hash type received in block signature\n");
+                if(fDebug>0)LogPrintf("hdac: Invalid hash type received in block signature\n");
                 block->nSigHashType=BLOCKSIGHASH_INVALID;
                 return false;
         }
@@ -304,7 +304,7 @@ bool VerifyBlockSignature(CBlock *block,bool force)
 
         if(!pubKeyOut.Verify(hash_to_verify,vchSigOut))
         {
-            LogPrintf("hdac: Wrong block signature\n");
+            if(fDebug>0)LogPrintf("hdac: Wrong block signature\n");
             block->nSigHashType=BLOCKSIGHASH_INVALID;
             return false;
         }
@@ -313,7 +313,7 @@ bool VerifyBlockSignature(CBlock *block,bool force)
     {
         if(block->hashPrevBlock != uint256(0))
         {
-            LogPrintf("hdac: Block signature not found\n");                
+            if(fDebug>0)LogPrintf("hdac: Block signature not found\n");                
             block->nSigHashType=BLOCKSIGHASH_INVALID;
             return false;
         }
@@ -326,7 +326,7 @@ bool ReadTxFromDisk(CBlockIndex* pindex,int32_t offset,CTransaction& tx)
     CAutoFile file(OpenBlockFile(pindex->GetBlockPos(), true), SER_DISK, CLIENT_VERSION);
     if (file.IsNull())
     {
-        LogPrintf("VerifyBlockMiner: Could not load block %s (height %d) from disk\n",pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
+        if(fDebug>0)LogPrintf("VerifyBlockMiner: Could not load block %s (height %d) from disk\n",pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
         return false;
     }
     try 
@@ -336,7 +336,7 @@ bool ReadTxFromDisk(CBlockIndex* pindex,int32_t offset,CTransaction& tx)
     } 
     catch (std::exception &e) 
     {
-        LogPrintf("VerifyBlockMiner: Could not deserialize tx at offset %d block %s (height %d) from disk\n",offset,pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
+        if(fDebug>0)LogPrintf("VerifyBlockMiner: Could not deserialize tx at offset %d block %s (height %d) from disk\n",offset,pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
         return false;
     }
 
@@ -396,7 +396,7 @@ bool VerifyBlockMiner(CBlock *block_in,CBlockIndex* pindexNew)
     {
         if ( ((pindexNew->nStatus & BLOCK_HAVE_DATA) == 0 ) || !ReadBlockFromDisk(last_block, pindexNew) )
         {
-            LogPrintf("VerifyBlockMiner: Block %s (height %d) miner verification skipped - block not found\n",pindexNew->GetBlockHash().ToString().c_str(),pindexNew->nHeight);        
+            if(fDebug>0)LogPrintf("VerifyBlockMiner: Block %s (height %d) miner verification skipped - block not found\n",pindexNew->GetBlockHash().ToString().c_str(),pindexNew->nHeight);        
             fReject=true;                                              
         }       
         pblock_last=&last_block;
@@ -413,13 +413,13 @@ bool VerifyBlockMiner(CBlock *block_in,CBlockIndex* pindexNew)
         goto exitlbl;                    
     }
     
-    LogPrint("hdac","VerifyBlockMiner: Block: %d, Fork: %d, Chain: %d\n",pindexNew->nHeight,pindexFork->nHeight,mc_gState->m_Permissions->m_Block);
+    if(fDebug>1)LogPrint("hdac","VerifyBlockMiner: Block: %d, Fork: %d, Chain: %d\n",pindexNew->nHeight,pindexFork->nHeight,mc_gState->m_Permissions->m_Block);
     
     while(pindex != pindexFork)
     {
         if(pindex->nStatus & BLOCK_FAILED_MASK)
         {
-            LogPrintf("VerifyBlockMiner: Invalid block %s (height %d)\n",pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
+            if(fDebug>0)LogPrintf("VerifyBlockMiner: Invalid block %s (height %d)\n",pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
             fReject=true;
             goto exitlbl;            
         }
@@ -432,11 +432,11 @@ bool VerifyBlockMiner(CBlock *block_in,CBlockIndex* pindexNew)
     last_after_fork=0;
     fRolledBack=true;
     mc_gState->m_Permissions->RollBackBeforeMinerVerification(pindexFork->nHeight);
-    LogPrint("hdac","VerifyBlockMiner: Rolled back to block %d\n",mc_gState->m_Permissions->m_Block);
+    if(fDebug>1)LogPrint("hdac","VerifyBlockMiner: Rolled back to block %d\n",mc_gState->m_Permissions->m_Block);
 
     for(pos=0;pos<branch_size;pos++)
     {
-        LogPrint("hdac","VerifyBlockMiner: Verifying block %d\n",mc_gState->m_Permissions->m_Block+1);
+        if(fDebug>1)LogPrint("hdac","VerifyBlockMiner: Verifying block %d\n",mc_gState->m_Permissions->m_Block+1);
         pindex=branch[pos];
         block_hash=pindex->GetBlockHash();
         fVerify=false;
@@ -448,7 +448,7 @@ bool VerifyBlockMiner(CBlock *block_in,CBlockIndex* pindexNew)
         }
         if(!fVerify && (mc_gState->m_Permissions->GetBlockMiner(&block_hash,(unsigned char*)&miners[pos],&admin_miner_count) == MC_ERR_NOERROR) )
         {
-            LogPrint("hdac","VerifyBlockMiner: Verified block %s (height %d)\n",pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
+            if(fDebug>1)LogPrint("hdac","VerifyBlockMiner: Verified block %s (height %d)\n",pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
             if(miners[pos] == miners[branch_size - 1])
             {
                 last_after_fork=pindex->nHeight;
@@ -467,10 +467,10 @@ bool VerifyBlockMiner(CBlock *block_in,CBlockIndex* pindexNew)
                             fReject=true;
                             goto exitlbl;                            
                         }
-                        LogPrint("hdac","VerifyBlockMiner: Grant tx %s in block %s (height %d)\n",tx.GetHash().ToString().c_str(),pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
+                        if(fDebug>1)LogPrint("hdac","VerifyBlockMiner: Grant tx %s in block %s (height %d)\n",tx.GetHash().ToString().c_str(),pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
                         if(!AcceptAdminMinerPermissions(tx,offsets[i],false,reason,NULL))
                         {
-                            LogPrintf("VerifyBlockMiner: tx %s: %s\n",tx.GetHash().ToString().c_str(),reason.c_str());
+                            if(fDebug>0)LogPrintf("VerifyBlockMiner: tx %s: %s\n",tx.GetHash().ToString().c_str(),reason.c_str());
                             fReject=true;
                             goto exitlbl;                            
                         }
@@ -484,11 +484,11 @@ bool VerifyBlockMiner(CBlock *block_in,CBlockIndex* pindexNew)
         {
             if(pblock == NULL)
             {
-                LogPrint("hdac","VerifyBlockMiner: Unverified block %s (height %d)\n",pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
+                if(fDebug>1)LogPrint("hdac","VerifyBlockMiner: Unverified block %s (height %d)\n",pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
                 if ( ((pindex->nStatus & BLOCK_HAVE_DATA) == 0 ) || !ReadBlockFromDisk(branch_block, pindex) )
                 {
-                    LogPrintf("VerifyBlockMiner: Could not load block %s (height %d) from disk\n",pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
-                    LogPrintf("VerifyBlockMiner: Block %s (height %d) miner verification skipped\n",pindexNew->GetBlockHash().ToString().c_str(),pindexNew->nHeight);        
+                    if(fDebug>0)LogPrintf("VerifyBlockMiner: Could not load block %s (height %d) from disk\n",pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
+                    if(fDebug>0)LogPrintf("VerifyBlockMiner: Block %s (height %d) miner verification skipped\n",pindexNew->GetBlockHash().ToString().c_str(),pindexNew->nHeight);        
                     fReject=false;                                              // We cannot neglect subsequent blocks, but it is unverified
                     goto exitlbl;                    
                 }
@@ -503,17 +503,17 @@ bool VerifyBlockMiner(CBlock *block_in,CBlockIndex* pindexNew)
                 }
                 if(mc_gState->m_Permissions->CanMineBlockOnFork(&miners[pos],pindex->nHeight,last_after_fork) == 0)
                 {
-                    LogPrintf("VerifyBlockMiner: Permission denied for miner %s received in block signature\n",CBitcoinAddress(pubKeyHash).ToString().c_str());
+                    if(fDebug>0)LogPrintf("VerifyBlockMiner: Permission denied for miner %s received in block signature\n",CBitcoinAddress(pubKeyHash).ToString().c_str());
                     fReject=true;
                     goto exitlbl;                    
                 }
             }
             else
             {
-                LogPrint("hdac","VerifyBlockMiner: New block %s (height %d)\n",pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
+                if(fDebug>1)LogPrint("hdac","VerifyBlockMiner: New block %s (height %d)\n",pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
                 if(mc_gState->m_Permissions->CanMineBlockOnFork(&miners[pos],pindex->nHeight,last_after_fork) == 0)
                 {
-                    LogPrintf("VerifyBlockMiner: Permission denied for miner %s received in block signature\n",CBitcoinAddress(pubKeyHashNew).ToString().c_str());
+                    if(fDebug>0)LogPrintf("VerifyBlockMiner: Permission denied for miner %s received in block signature\n",CBitcoinAddress(pubKeyHashNew).ToString().c_str());
                     fReject=true;
                     goto exitlbl;                    
                 }
@@ -527,13 +527,13 @@ bool VerifyBlockMiner(CBlock *block_in,CBlockIndex* pindexNew)
                 int mempool_size=mc_gState->m_Permissions->m_MemPool->GetCount();
                 if(!AcceptAdminMinerPermissions(tx,off,true,reason,&result))
                 {
-                    LogPrintf("VerifyBlockMiner: tx %s: %s\n",tx.GetHash().ToString().c_str(),reason.c_str());
+                    if(fDebug>0)LogPrintf("VerifyBlockMiner: tx %s: %s\n",tx.GetHash().ToString().c_str(),reason.c_str());
                     fReject=true;
                     goto exitlbl;                            
                 }
                 if(mempool_size != mc_gState->m_Permissions->m_MemPool->GetCount())
                 {
-                    LogPrint("hdac","VerifyBlockMiner: Grant tx %s in block %s (height %d)\n",tx.GetHash().ToString().c_str(),pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
+                    if(fDebug>1)LogPrint("hdac","VerifyBlockMiner: Grant tx %s in block %s (height %d)\n",tx.GetHash().ToString().c_str(),pindex->GetBlockHash().ToString().c_str(),pindex->nHeight);
                 }
                 
                 off+=tx.GetSerializeSize(SER_NETWORK,tx.nVersion);
@@ -547,14 +547,14 @@ exitlbl:
 
     if(fRolledBack)
     {
-        LogPrint("hdac","VerifyBlockMiner: Restoring chain, block %d\n",mc_gState->m_Permissions->m_Block);
+        if(fDebug>1)LogPrint("hdac","VerifyBlockMiner: Restoring chain, block %d\n",mc_gState->m_Permissions->m_Block);
         mc_gState->m_Permissions->RestoreAfterMinerVerification();
-        LogPrint("hdac","VerifyBlockMiner: Restored on block %d\n",mc_gState->m_Permissions->m_Block);
+        if(fDebug>1)LogPrint("hdac","VerifyBlockMiner: Restored on block %d\n",mc_gState->m_Permissions->m_Block);
     }
 
     if(fReject)
     {
-        LogPrintf("VerifyBlockMiner: Block %s (height %d) miner verification failed\n",pindexNew->GetBlockHash().ToString().c_str(),pindexNew->nHeight);        
+        if(fDebug>0)LogPrintf("VerifyBlockMiner: Block %s (height %d) miner verification failed\n",pindexNew->GetBlockHash().ToString().c_str(),pindexNew->nHeight);        
     }
 
     return !fReject;
@@ -569,7 +569,7 @@ bool CheckBlockPermissions(const CBlock& block,CBlockIndex* prev_block,unsigned 
     vector<unsigned char> vchSigOut;
     vector<unsigned char> vchPubKey;
     
-    LogPrint("hdac","mchn: Checking block signature and miner permissions...\n");
+    if(fDebug>1)LogPrint("hdac","mchn: Checking block signature and miner permissions...\n");
             
     key_size=255;    
     
@@ -591,7 +591,7 @@ bool CheckBlockPermissions(const CBlock& block,CBlockIndex* prev_block,unsigned 
                 CPubKey pubKeyOut(vchPubKey);
                 if (!pubKeyOut.IsValid())
                 {
-                    LogPrintf("hdac: Invalid pubkey received in block signature\n");
+                    if(fDebug>0)LogPrintf("hdac: Invalid pubkey received in block signature\n");
                     checked = false;
                 }
                 if(checked)
@@ -600,7 +600,7 @@ bool CheckBlockPermissions(const CBlock& block,CBlockIndex* prev_block,unsigned 
                     memcpy(lpMinerAddress,pubKeyHash.begin(),20);
                     if(!mc_gState->m_Permissions->CanMine(NULL,pubKeyHash.begin()))
                     {
-                        LogPrintf("hdac: Permission denied for miner %s received in block signature\n",CBitcoinAddress(pubKeyHash).ToString().c_str());
+                        if(fDebug>0)LogPrintf("hdac: Permission denied for miner %s received in block signature\n",CBitcoinAddress(pubKeyHash).ToString().c_str());
                         checked = false;
                     }
                 }                
@@ -614,7 +614,7 @@ bool CheckBlockPermissions(const CBlock& block,CBlockIndex* prev_block,unsigned 
             CPubKey pubKeyOut(vchPubKey);
             if (!pubKeyOut.IsValid())
             {
-                LogPrintf("hdac: Invalid pubkey received in block signature\n");
+                if(fDebug>0)LogPrintf("hdac: Invalid pubkey received in block signature\n");
                 checked = false;
             }
             if(checked)

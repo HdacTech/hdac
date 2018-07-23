@@ -54,7 +54,7 @@ void CDBEnv::EnvShutdown()
     fDbEnvInit = false;
     int ret = dbenv.close(0);
     if (ret != 0)
-        LogPrintf("CDBEnv::EnvShutdown : Error %d shutting down database environment: %s\n", ret, DbEnv::strerror(ret));
+        if(fDebug>0)LogPrintf("CDBEnv::EnvShutdown : Error %d shutting down database environment: %s\n", ret, DbEnv::strerror(ret));
     if (!fMockDb)
         DbEnv(0).remove(strPath.c_str(), 0);
 }
@@ -86,7 +86,7 @@ bool CDBEnv::Open(const boost::filesystem::path& pathIn)
     boost::filesystem::path pathLogDir = pathIn / "database";
     TryCreateDirectory(pathLogDir);
     boost::filesystem::path pathErrorFile = pathIn / "db.log";
-    LogPrintf("CDBEnv::Open : LogDir=%s ErrorFile=%s\n", pathLogDir.string(), pathErrorFile.string());
+    if(fDebug>0)LogPrintf("CDBEnv::Open : LogDir=%s ErrorFile=%s\n", pathLogDir.string(), pathErrorFile.string());
 
     unsigned int nEnvFlags = 0;
     if (GetBoolArg("-privdb", true))
@@ -127,7 +127,7 @@ void CDBEnv::MakeMock()
 
     boost::this_thread::interruption_point();
 
-    LogPrint("db", "CDBEnv::MakeMock\n");
+    if(fDebug>1)LogPrint("db", "CDBEnv::MakeMock\n");
 
     dbenv.set_cachesize(1, 0, 1);
     dbenv.set_lg_bsize(10485760 * 4);
@@ -188,14 +188,14 @@ bool CDBEnv::Salvage(std::string strFile, bool fAggressive, std::vector<CDBEnv::
     Db db(&dbenv, 0);
     int result = db.verify(strFile.c_str(), NULL, &strDump, flags);
     if (result == DB_VERIFY_BAD) {
-        LogPrintf("CDBEnv::Salvage : Database salvage found errors, all data may not be recoverable.\n");
+        if(fDebug>0)LogPrintf("CDBEnv::Salvage : Database salvage found errors, all data may not be recoverable.\n");
         if (!fAggressive) {
-            LogPrintf("CDBEnv::Salvage : Rerun with aggressive mode to ignore errors and continue.\n");
+            if(fDebug>0)LogPrintf("CDBEnv::Salvage : Rerun with aggressive mode to ignore errors and continue.\n");
             return false;
         }
     }
     if (result != 0 && result != DB_VERIFY_BAD) {
-        LogPrintf("CDBEnv::Salvage : Database salvage failed with result %d.\n", result);
+        if(fDebug>0)LogPrintf("CDBEnv::Salvage : Database salvage failed with result %d.\n", result);
         return false;
     }
 
@@ -219,7 +219,7 @@ bool CDBEnv::Salvage(std::string strFile, bool fAggressive, std::vector<CDBEnv::
                break;             
             getline(strDump, valueHex);
             if (valueHex == DATA_END) {
-                LogPrintf("CDBEnv::Salvage: WARNING: Number of keys in data does not match number of values.\n");
+                if(fDebug>0)LogPrintf("CDBEnv::Salvage: WARNING: Number of keys in data does not match number of values.\n");
                 break;
             }
               
@@ -228,7 +228,7 @@ bool CDBEnv::Salvage(std::string strFile, bool fAggressive, std::vector<CDBEnv::
     }
 
     if (keyHex != DATA_END) {
-        LogPrintf("CDBEnv::Salvage: WARNING: Unexpected end of file while reading salvage output.\n");
+        if(fDebug>0)LogPrintf("CDBEnv::Salvage: WARNING: Unexpected end of file while reading salvage output.\n");
         return false;
     }
 
@@ -368,7 +368,7 @@ bool CDB::Rewrite(const string& strFile, const char* pszSkip)
                 bitdb.mapFileUseCount.erase(strFile);
 
                 bool fSuccess = true;
-                LogPrintf("CDB::Rewrite : Rewriting %s...\n", strFile);
+                if(fDebug>0)LogPrintf("CDB::Rewrite : Rewriting %s...\n", strFile);
                 string strFileRes = strFile + ".rewrite";
                 { // surround usage of db with extra {}
                     CDB db(strFile.c_str(), "r");
@@ -381,7 +381,7 @@ bool CDB::Rewrite(const string& strFile, const char* pszSkip)
                                             DB_CREATE,          // Flags
                                             0);
                     if (ret > 0) {
-                        LogPrintf("CDB::Rewrite : Can't create database file %s\n", strFileRes);
+                        if(fDebug>0)LogPrintf("CDB::Rewrite : Can't create database file %s\n", strFileRes);
                         fSuccess = false;
                     }
 
@@ -430,7 +430,7 @@ bool CDB::Rewrite(const string& strFile, const char* pszSkip)
                         fSuccess = false;
                 }
                 if (!fSuccess)
-                    LogPrintf("CDB::Rewrite : Failed to rewrite database file %s\n", strFileRes);
+                    if(fDebug>0)LogPrintf("CDB::Rewrite : Failed to rewrite database file %s\n", strFileRes);
                 return fSuccess;
             }
         }
@@ -444,7 +444,7 @@ void CDBEnv::Flush(bool fShutdown)
 {
     int64_t nStart = GetTimeMillis();
     // Flush log data to the actual data file on all files that are not in use
-    LogPrint("db", "CDBEnv::Flush : Flush(%s)%s\n", fShutdown ? "true" : "false", fDbEnvInit ? "" : " database not started");
+    if(fDebug>1)LogPrint("db", "CDBEnv::Flush : Flush(%s)%s\n", fShutdown ? "true" : "false", fDbEnvInit ? "" : " database not started");
     if (!fDbEnvInit)
         return;
     {
@@ -453,21 +453,21 @@ void CDBEnv::Flush(bool fShutdown)
         while (mi != mapFileUseCount.end()) {
             string strFile = (*mi).first;
             int nRefCount = (*mi).second;
-            LogPrint("db", "CDBEnv::Flush : Flushing %s (refcount = %d)...\n", strFile, nRefCount);
+            if(fDebug>1)LogPrint("db", "CDBEnv::Flush : Flushing %s (refcount = %d)...\n", strFile, nRefCount);
             if (nRefCount == 0) {
                 // Move log data to the dat file
                 CloseDb(strFile);
-                LogPrint("db", "CDBEnv::Flush : %s checkpoint\n", strFile);
+                if(fDebug>1)LogPrint("db", "CDBEnv::Flush : %s checkpoint\n", strFile);
                 dbenv.txn_checkpoint(0, 0, 0);
-                LogPrint("db", "CDBEnv::Flush : %s detach\n", strFile);
+                if(fDebug>1)LogPrint("db", "CDBEnv::Flush : %s detach\n", strFile);
                 if (!fMockDb)
                     dbenv.lsn_reset(strFile.c_str(), 0);
-                LogPrint("db", "CDBEnv::Flush : %s closed\n", strFile);
+                if(fDebug>1)LogPrint("db", "CDBEnv::Flush : %s closed\n", strFile);
                 mapFileUseCount.erase(mi++);
             } else
                 mi++;
         }
-        LogPrint("db", "CDBEnv::Flush : Flush(%s)%s took %15dms\n", fShutdown ? "true" : "false", fDbEnvInit ? "" : " database not started", GetTimeMillis() - nStart);
+        if(fDebug>1)LogPrint("db", "CDBEnv::Flush : Flush(%s)%s took %15dms\n", fShutdown ? "true" : "false", fDbEnvInit ? "" : " database not started", GetTimeMillis() - nStart);
         if (fShutdown) {
             char** listp;
             if (mapFileUseCount.empty()) {

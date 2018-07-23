@@ -311,8 +311,8 @@ Value approvefrom(const json_spirit::Array& params, bool fHelp)
     }    
     scriptOpReturn << OP_RETURN;
     
-    LogPrintf("mchn: %s upgrade %s (%s) from address %s\n",(approval != 0) ? "Approving" : "Disapproving",
-            ((uint256*)entity.GetTxID())->ToString().c_str(),entity.GetName(),CBitcoinAddress(fromaddresses[0]).ToString().c_str());
+    if(fDebug>0)LogPrintf("mchn: %s upgrade %s (%s) from address %s\n",(approval != 0) ? "Approving" : "Disapproving",
+                          ((uint256*)entity.GetTxID())->ToString().c_str(),entity.GetName(),CBitcoinAddress(fromaddresses[0]).ToString().c_str());
         
     
     CWalletTx wtx;

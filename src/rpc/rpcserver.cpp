@@ -477,7 +477,7 @@ Value pausecmd(const Array& params, bool fHelp)
     
     mc_gState->m_NodePausedState |= type;
     
-    LogPrintf("Node paused state is set to %08X\n",mc_gState->m_NodePausedState);
+    if(fDebug>1)LogPrintf("Node paused state is set to %08X\n",mc_gState->m_NodePausedState);
     
     return "Paused";
 }
@@ -505,7 +505,7 @@ Value resumecmd(const Array& params, bool fHelp)
         pwalletMain->ReacceptWalletTransactions();
     }
 
-    LogPrintf("Node paused state is set to %08X\n",mc_gState->m_NodePausedState);
+    if(fDebug>1)LogPrintf("Node paused state is set to %08X\n",mc_gState->m_NodePausedState);
     
     return "Resumed";
 }
@@ -683,7 +683,7 @@ static void RPCAcceptHandler(boost::shared_ptr< basic_socket_acceptor<Protocol, 
     if (error)
     {
         // TODO: Actually handle errors
-        LogPrintf("%s: Error: %s\n", __func__, error.message());
+        if(fDebug>4)LogPrintf("%s: Error: %s\n", __func__, error.message());
     }
     // Restrict callers by IP.  It is important to
     // do this before starting client thread, to filter out
@@ -760,7 +760,7 @@ void StartRPCThreads()
     std::string strAllowed;
     BOOST_FOREACH(const CSubNet &subnet, rpc_allow_subnets)
         strAllowed += subnet.ToString() + " ";
-    if(fDebug)LogPrint("rpc", "Allowing RPC connections from: %s\n", strAllowed);
+    if(fDebug>4)LogPrint("rpc", "Allowing RPC connections from: %s\n", strAllowed);
 
     strRPCUserColonPass = mapArgs["-rpcuser"] + ":" + mapArgs["-rpcpassword"];
     if (((mapArgs["-rpcpassword"] == "") ||
@@ -803,12 +803,18 @@ void StartRPCThreads()
         filesystem::path pathCertFile(GetArg("-rpcsslcertificatechainfile", "server.cert"));
         if (!pathCertFile.is_complete()) pathCertFile = filesystem::path(GetDataDir()) / pathCertFile;
         if (filesystem::exists(pathCertFile)) rpc_ssl_context->use_certificate_chain_file(pathCertFile.string());
-        else LogPrintf("ThreadRPCServer ERROR: missing server certificate file %s\n", pathCertFile.string());
+        else 
+        {
+            if(fDebug>4)LogPrintf("ThreadRPCServer ERROR: missing server certificate file %s\n", pathCertFile.string());
+        }
 
         filesystem::path pathPKFile(GetArg("-rpcsslprivatekeyfile", "server.pem"));
         if (!pathPKFile.is_complete()) pathPKFile = filesystem::path(GetDataDir()) / pathPKFile;
         if (filesystem::exists(pathPKFile)) rpc_ssl_context->use_private_key_file(pathPKFile.string(), ssl::context::pem);
-        else LogPrintf("ThreadRPCServer ERROR: missing server private key file %s\n", pathPKFile.string());
+        else 
+        {
+            if(fDebug>4)LogPrintf("ThreadRPCServer ERROR: missing server private key file %s\n", pathPKFile.string());
+        }
 
         string strCiphers = GetArg("-rpcsslciphers", "TLSv1.2+HIGH:TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!3DES:@STRENGTH");
         SSL_CTX_set_cipher_list(rpc_ssl_context->impl(), strCiphers.c_str());
@@ -823,7 +829,7 @@ void StartRPCThreads()
         vEndpoints.push_back(ip::tcp::endpoint(asio::ip::address_v4::loopback(), defaultPort));
         if (mapArgs.count("-rpcbind"))
         {
-            LogPrintf("WARNING: option -rpcbind was ignored because -rpcallowip was not specified, refusing to allow everyone to connect\n");
+            if(fDebug>4)LogPrintf("WARNING: option -rpcbind was ignored because -rpcallowip was not specified, refusing to allow everyone to connect\n");
         }
     } else if (mapArgs.count("-rpcbind")) // Specific bind address
     {
@@ -857,7 +863,7 @@ void StartRPCThreads()
         try {
             asio::ip::address bindAddress = endpoint.address();
             straddress = bindAddress.to_string();
-            LogPrintf("Binding RPC on address %s port %i (IPv4+IPv6 bind any: %i)\n", straddress, endpoint.port(), bBindAny);
+            if(fDebug>4)LogPrintf("Binding RPC on address %s port %i (IPv4+IPv6 bind any: %i)\n", straddress, endpoint.port(), bBindAny);
             boost::system::error_code v6_only_error;
             boost::shared_ptr<ip::tcp::acceptor> acceptor(new ip::tcp::acceptor(*rpc_io_service));
 
@@ -881,7 +887,7 @@ void StartRPCThreads()
         }
         catch(boost::system::system_error &e)
         {
-            LogPrintf("ERROR: Binding RPC on address %s port %i failed: %s\n", straddress, endpoint.port(), e.what());
+            if(fDebug>4)LogPrintf("ERROR: Binding RPC on address %s port %i failed: %s\n", straddress, endpoint.port(), e.what());
             strerr = strprintf(_("An error occurred while setting up the RPC address %s port %u for listening: %s"), straddress, endpoint.port(), e.what());
         }
     }
@@ -928,14 +934,14 @@ void StopRPCThreads()
     {
         acceptor->cancel(ec);
         if (ec)
-            LogPrintf("%s: Warning: %s when cancelling acceptor", __func__, ec.message());
+            if(fDebug>4)LogPrintf("%s: Warning: %s when cancelling acceptor", __func__, ec.message());
     }
     rpc_acceptors.clear();
     BOOST_FOREACH(const PAIRTYPE(std::string, boost::shared_ptr<deadline_timer>) &timer, deadlineTimers)
     {
         timer.second->cancel(ec);
         if (ec)
-            LogPrintf("%s: Warning: %s when cancelling timer", __func__, ec.message());
+            if(fDebug>4)LogPrintf("%s: Warning: %s when cancelling timer", __func__, ec.message());
     }
     deadlineTimers.clear();
 
@@ -1023,7 +1029,7 @@ void JSONRequest::parse(const Value& valRequest)
         throw JSONRPCError(RPC_INVALID_REQUEST, "Method must be a string");
     strMethod = valMethod.get_str();
     if (strMethod != "getblocktemplate")
-        if(fDebug)LogPrint("rpc", "ThreadRPCServer method=%s\n", SanitizeString(strMethod));
+        if(fDebug>4)LogPrint("rpc", "ThreadRPCServer method=%s\n", SanitizeString(strMethod));
 
     Value valChainName = find_value(request, "chain_name");
     if (valChainName.type() != null_type)
@@ -1061,13 +1067,13 @@ static Object JSONRPCExecOne(const Value& req)
     catch (Object& objError)
     {
         mc_gState->m_WalletMode=wallet_mode;
-        if(fDebug)LogPrint("mcapi","mcapi: API request failure A\n");        
+        if(fDebug>4)LogPrint("mcapi","mcapi: API request failure A\n");        
         rpc_result = JSONRPCReplyObj(Value::null, objError, jreq.id);
     }
     catch (std::exception& e)
     {
         mc_gState->m_WalletMode=wallet_mode;
-        if(fDebug)LogPrint("mcapi","mcapi: API request failure B\n");        
+        if(fDebug>4)LogPrint("mcapi","mcapi: API request failure B\n");        
 
         rpc_result = JSONRPCReplyObj(Value::null,
                                      JSONRPCError(RPC_PARSE_ERROR, e.what()), jreq.id);
@@ -1099,7 +1105,7 @@ static bool HTTPReq_JSONRPC(AcceptedConnection *conn,
 
     if (!HTTPAuthorized(mapHeaders))
     {
-        LogPrintf("ThreadRPCServer incorrect password attempt from %s\n", conn->peer_address_to_string());
+        if(fDebug>4)LogPrintf("ThreadRPCServer incorrect password attempt from %s\n", conn->peer_address_to_string());
         /* Deter brute-forcing
            If this results in a DoS the user really
            shouldn't have their RPC port exposed. */
@@ -1111,7 +1117,7 @@ static bool HTTPReq_JSONRPC(AcceptedConnection *conn,
 
     JSONRequest jreq;
     uint32_t wallet_mode=mc_gState->m_WalletMode;
-    if(fDebug)LogPrint("mcapi","mcapi: API request from %s\n",conn->peer_address_to_string().c_str());
+    if(fDebug>4)LogPrint("mcapi","mcapi: API request from %s\n",conn->peer_address_to_string().c_str());
 
     try
     {
@@ -1149,7 +1155,7 @@ static bool HTTPReq_JSONRPC(AcceptedConnection *conn,
     catch (Object& objError)
     {
         mc_gState->m_WalletMode=wallet_mode;
-        if(fDebug)LogPrint("mcapi","mcapi: API request failure: %s, code: %d\n",jreq.strMethod.c_str(),find_value(objError, "code").get_int());
+        if(fDebug>4)LogPrint("mcapi","mcapi: API request failure: %s, code: %d\n",jreq.strMethod.c_str(),find_value(objError, "code").get_int());
         
         ErrorReply(conn->stream(), objError, jreq.id);
         return false;
@@ -1157,7 +1163,7 @@ static bool HTTPReq_JSONRPC(AcceptedConnection *conn,
     catch (std::exception& e)
     {
         mc_gState->m_WalletMode=wallet_mode;
-        if(fDebug)LogPrint("mcapi","mcapi: API request failure D\n");        
+        if(fDebug>4)LogPrint("mcapi","mcapi: API request failure D\n");        
 
         ErrorReply(conn->stream(), JSONRPCError(RPC_PARSE_ERROR, e.what()), jreq.id);
         return false;
@@ -1291,7 +1297,7 @@ json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_s
     try
     {
         // Execute
-        if(fDebug)
+        if(fDebug>4)
         {
             string strRequest = JSONRPCRequestForLog(strMethod, params, 1);
             LogPrint("mcapi","mcapi: API request: %s\n",strRequest.c_str());
@@ -1335,13 +1341,13 @@ json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_s
                             if(strcmp(strResultNone.c_str(),strResult.c_str()))
                             {
                                 string strRequestBad = JSONRPCRequestForLog(strMethod, params, 1);
-                                if(fDebug)LogPrint("walletcompare","walletcompare: ERROR: Result mismatch on API request: %s\n",strRequestBad.c_str());
-                                if(fDebug)LogPrint("walletcompare","walletcompare: %s\n",strResultNone.c_str());
-                                if(fDebug)LogPrint("walletcompare","walletcompare: %s\n",strResult.c_str());
+                                if(fDebug>4)LogPrint("walletcompare","walletcompare: ERROR: Result mismatch on API request: %s\n",strRequestBad.c_str());
+                                if(fDebug>4)LogPrint("walletcompare","walletcompare: %s\n",strResultNone.c_str());
+                                if(fDebug>4)LogPrint("walletcompare","walletcompare: %s\n",strResult.c_str());
                             }
                             else
                             {
-                                if(fDebug)LogPrint("walletcompare","walletcompare: match: %s \n",strMethod.c_str());                                
+                                if(fDebug>4)LogPrint("walletcompare","walletcompare: match: %s \n",strMethod.c_str());                                
                             }
                         }
                     }
@@ -1355,13 +1361,13 @@ json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_s
 #endif // !ENABLE_WALLET
         }
 
-        if(fDebug)LogPrint("mcapi","mcapi: API request successful: %s\n",strMethod.c_str());
+        if(fDebug>4)LogPrint("mcapi","mcapi: API request successful: %s\n",strMethod.c_str());
 
         return result;
     }
     catch (std::exception& e)
     {
-        if(fDebug)LogPrint("mcapi","mcapi: API request failure: %s\n",strMethod.c_str());
+        if(fDebug>4)LogPrint("mcapi","mcapi: API request failure: %s\n",strMethod.c_str());
         if(strcmp(e.what(),"Help message not found\n") == 0)
         {
             throw JSONRPCError(RPC_MISC_ERROR, mc_RPCHelpString(strMethod).c_str());

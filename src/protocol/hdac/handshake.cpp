@@ -147,7 +147,7 @@ bool ProcessHdacVerack(CNode* pfrom, CDataStream& vRecv,bool fIsVerackack,bool *
     {
         if(pfrom->nVersionNonceSent == 1)
         {
-            LogPrintf("hdac: We don't expect verack from peer=%d\n", pfrom->id);
+            if(fDebug>0)LogPrintf("hdac: We don't expect verack from peer=%d\n", pfrom->id);
             return false;
         }
         vRecv >> pfrom->nVerackNonceReceived >> sParameterSet;        
@@ -157,7 +157,7 @@ bool ProcessHdacVerack(CNode* pfrom, CDataStream& vRecv,bool fIsVerackack,bool *
     {
         if(pfrom->nVerackNonceSent == 1)
         {
-            LogPrintf("hdac: We don't expect verackack from peer=%d\n", pfrom->id);
+            if(fDebug>0)LogPrintf("hdac: We don't expect verackack from peer=%d\n", pfrom->id);
             return false;
         }        
         nNonce=pfrom->nVerackNonceSent;
@@ -168,7 +168,7 @@ bool ProcessHdacVerack(CNode* pfrom, CDataStream& vRecv,bool fIsVerackack,bool *
     
     if(sParameterSetHash.size() != 32)
     {
-            LogPrintf("hdac: Wrong parameter set hash size (%d) from peer=%d\n", sParameterSetHash.size(), pfrom->id);
+            if(fDebug>0)LogPrintf("hdac: Wrong parameter set hash size (%d) from peer=%d\n", sParameterSetHash.size(), pfrom->id);
             return false;        
     }
     
@@ -178,7 +178,7 @@ bool ProcessHdacVerack(CNode* pfrom, CDataStream& vRecv,bool fIsVerackack,bool *
         {
             if(!fIsVerackack)
             {
-                LogPrintf("hdac: Parameter set hash mismatch from peer=%d\n",  pfrom->id);
+                if(fDebug>0)LogPrintf("hdac: Parameter set hash mismatch from peer=%d\n",  pfrom->id);
                 return false;                    
             }
         }
@@ -187,7 +187,7 @@ bool ProcessHdacVerack(CNode* pfrom, CDataStream& vRecv,bool fIsVerackack,bool *
             if(fIsVerackack)
             {
                 only_check_signature=true;
-//                return false;
+                //return false;
             }
         }
     }
@@ -205,21 +205,21 @@ bool ProcessHdacVerack(CNode* pfrom, CDataStream& vRecv,bool fIsVerackack,bool *
     
         if (!scriptSig.GetOp(pc, opcode, vchSigOut))
         {
-            LogPrintf("hdac: Cannot extract signature from sigScript from peer=%d\n",  pfrom->id);
+            if(fDebug>0)LogPrintf("hdac: Cannot extract signature from sigScript from peer=%d\n",  pfrom->id);
             return false;                                
         }
     
         vchSigOut.resize(vchSigOut.size()-1);
         if (!scriptSig.GetOp(pc, opcode, vchPubKey))
         {
-            LogPrintf("hdac: Cannot extract pubkey from sigScript from peer=%d\n", pfrom->id);
+            if(fDebug>0)LogPrintf("hdac: Cannot extract pubkey from sigScript from peer=%d\n", pfrom->id);
             return false;                                
         }
     
         CPubKey pubKeyOut(vchPubKey);
         if (!pubKeyOut.IsValid())
         {
-            LogPrintf("hdac: Invalid pubkey received from peer=%d\n", pfrom->id);
+            if(fDebug>0)LogPrintf("hdac: Invalid pubkey received from peer=%d\n", pfrom->id);
             return false;                                
         }
 
@@ -228,17 +228,17 @@ bool ProcessHdacVerack(CNode* pfrom, CDataStream& vRecv,bool fIsVerackack,bool *
         pfrom->kAddrRemote=pubKeyHash;
         if(fIsVerackack)
         {
-            LogPrintf("hdac: Connection from %s received on peer=%d in verackack (%s)\n",CBitcoinAddress(pubKeyHash).ToString().c_str(), pfrom->id,pfrom->addr.ToString());
+            if(fDebug>0)LogPrintf("hdac: Connection from %s received on peer=%d in verackack (%s)\n",CBitcoinAddress(pubKeyHash).ToString().c_str(), pfrom->id,pfrom->addr.ToString());
             if(!HdacNode_CanConnect(pfrom))
             {
-                LogPrintf("hdac: Permission denied for address %s received from peer=%d\n",CBitcoinAddress(pubKeyHash).ToString().c_str(), pfrom->id);
+                if(fDebug>0)LogPrintf("hdac: Permission denied for address %s received from peer=%d\n",CBitcoinAddress(pubKeyHash).ToString().c_str(), pfrom->id);
                 pfrom->fVerackackReceived=false;                                // Will resend minimal parameter set
                 if(only_check_signature)
                 {
                     return false;                                                
                 }
             }
-/*            
+            /*            
             {
                 LOCK(cs_vNodes);
                 BOOST_FOREACH(CNode* pnode, vNodes)
@@ -247,7 +247,7 @@ bool ProcessHdacVerack(CNode* pfrom, CDataStream& vRecv,bool fIsVerackack,bool *
                     {
                         if(pnode->kAddrRemote == pubKeyHash)
                         {
-                            LogPrintf("hdac: Already connected to address %s received from peer=%d\n",CBitcoinAddress(pubKeyHash).ToString().c_str(), pfrom->id);
+                            if(fDebug>0)LogPrintf("hdac: Already connected to address %s received from peer=%d\n",CBitcoinAddress(pubKeyHash).ToString().c_str(), pfrom->id);
                             pfrom->fVerackackReceived=false;                                // Will resend minimal parameter set
                             if(only_check_signature)
                             {
@@ -257,11 +257,11 @@ bool ProcessHdacVerack(CNode* pfrom, CDataStream& vRecv,bool fIsVerackack,bool *
                     }
                 }
             }            
- */ 
+            */ 
         }
         else
         {
-            LogPrintf("hdac: Connection from %s received on peer=%d in verack\n",CBitcoinAddress(pubKeyHash).ToString().c_str(), pfrom->id);
+            if(fDebug>0)LogPrintf("hdac: Connection from %s received on peer=%d in verack\n",CBitcoinAddress(pubKeyHash).ToString().c_str(), pfrom->id);
         }
         
         CHashWriter ss(SER_GETHASH, 0);
@@ -271,7 +271,7 @@ bool ProcessHdacVerack(CNode* pfrom, CDataStream& vRecv,bool fIsVerackack,bool *
 
         if(!pubKeyOut.Verify(signed_hash,vchSigOut))
         {
-            LogPrintf("hdac: Wrong signature received from peer=%d\n", pfrom->id);
+            if(fDebug>0)LogPrintf("hdac: Wrong signature received from peer=%d\n", pfrom->id);
             return false;                                
         }        
         if(only_check_signature)
@@ -306,7 +306,7 @@ bool ProcessHdacVerack(CNode* pfrom, CDataStream& vRecv,bool fIsVerackack,bool *
                     if((mc_gState->m_NetworkParams->m_Status != MC_PRM_STATUS_MINIMAL) &&
                        (mc_gState->m_NetworkParams->m_Status != MC_PRM_STATUS_VALID))
                     {
-                        LogPrintf("hdac: Invalid parameter set received from %s\n", pfrom->addr.ToString());
+                        if(fDebug>0)LogPrintf("hdac: Invalid parameter set received from %s\n", pfrom->addr.ToString());
                         return false;                       
                     }
                     break;
@@ -314,17 +314,17 @@ bool ProcessHdacVerack(CNode* pfrom, CDataStream& vRecv,bool fIsVerackack,bool *
                     if((mc_gState->m_NetworkParams->m_Status != MC_PRM_STATUS_MINIMAL) &&
                        (mc_gState->m_NetworkParams->m_Status != MC_PRM_STATUS_VALID))
                     {
-                        LogPrintf("hdac: Invalid parameter set received from %s\n", pfrom->addr.ToString());
+                        if(fDebug>0)LogPrintf("hdac: Invalid parameter set received from %s\n", pfrom->addr.ToString());
                         return false;                       
                     }
                     break;
                 default:
-                    LogPrintf("hdac: Invalid current parameter set status\n", pfrom->addr.ToString());
+                    if(fDebug>0)LogPrintf("hdac: Invalid current parameter set status\n", pfrom->addr.ToString());
                     return false;                       
             }
             if(strcmp(mc_gState->m_NetworkParams->Name(),mc_gState->m_Params->NetworkName()))
             {
-                LogPrintf("hdac: Parameter set received from %s has different name\n", pfrom->addr.ToString());
+                if(fDebug>0)LogPrintf("hdac: Parameter set received from %s has different name\n", pfrom->addr.ToString());
                 mc_gState->m_NetworkParams->Read(mc_gState->m_Params->NetworkName());
                 mc_gState->m_NetworkParams->Validate();
                 return false;                       
@@ -334,32 +334,32 @@ bool ProcessHdacVerack(CNode* pfrom, CDataStream& vRecv,bool fIsVerackack,bool *
             {
                 if(!VerifyHdacVerackHash(sParameterSetHash,nNonce))
                 {
-                    LogPrintf("hdac: Parameter set received from peer %d doesn't match received hash\n", pfrom->id);
+                    if(fDebug>0)LogPrintf("hdac: Parameter set received from peer %d doesn't match received hash\n", pfrom->id);
                     return false;                    
                 }
             }
 
             if( (pwalletMain != NULL) && !pwalletMain->vchDefaultKey.IsValid() && (mc_gState->m_NetworkParams->GetParam("privatekeyversion",NULL) == NULL) )
             {
-                LogPrintf("hdac: Parameter set received from %s doesn't contain privatekeyversion fields, not stored\n", pfrom->addr.ToString());                
+                if(fDebug>0)LogPrintf("hdac: Parameter set received from %s doesn't contain privatekeyversion fields, not stored\n", pfrom->addr.ToString());                
             }
             else
             {
                 if(mc_gState->m_NetworkParams->Write(1))
                 {
-                    LogPrintf("hdac: Cannot store parameter set received from %s\n", pfrom->addr.ToString());
+                    if(fDebug>0)LogPrintf("hdac: Cannot store parameter set received from %s\n", pfrom->addr.ToString());
                     mc_gState->m_NetworkParams->m_Status=MC_PRM_STATUS_ERROR;
                     return false;                       
                 }
                 else
                 {
-                    LogPrintf("hdac: Successfully stored parameter set received from %s\n", pfrom->addr.ToString());
+                    if(fDebug>0)LogPrintf("hdac: Successfully stored parameter set received from %s\n", pfrom->addr.ToString());
                 }
             }
         }
         else
         {
-            LogPrintf("hdac: Cannot parse parameter set received from %s\n", pfrom->addr.ToString());
+            if(fDebug>0)LogPrintf("hdac: Cannot parse parameter set received from %s\n", pfrom->addr.ToString());
             return false;                       
         }
         
@@ -389,7 +389,7 @@ bool PushHdacVerack(CNode* pfrom, bool fIsVerackack)
             pfrom->fVerackackReceived)
         {
             vParameterSet=vector<unsigned char>(mc_gState->m_NetworkParams->m_lpData,mc_gState->m_NetworkParams->m_lpData+mc_gState->m_NetworkParams->m_Size);        
-            LogPrintf("hdac: Sending full parameter set to %s\n", pfrom->addr.ToString());
+            if(fDebug>0)LogPrintf("hdac: Sending full parameter set to %s\n", pfrom->addr.ToString());
         }
         else
         {
@@ -397,18 +397,18 @@ bool PushHdacVerack(CNode* pfrom, bool fIsVerackack)
             int NumFieldsToSend=1;
             unsigned char *ptr;
             int size;
-//            if(pfrom->fDefaultMessageStart)
+            //if(pfrom->fDefaultMessageStart)
             {
                 NumFieldsToSend=7;                
             }
-            LogPrintf("hdac: Sending minimal parameter set to %s\n", pfrom->addr.ToString());
+            if(fDebug>4)LogPrintf("hdac: Sending minimal parameter set to %s\n", pfrom->addr.ToString());
             for(int f=0;f<NumFieldsToSend;f++)
             {
                 vParameterSet.insert(vParameterSet.end(),(unsigned char*)(fields_to_send[f].c_str()),(unsigned char*)(fields_to_send[f].c_str())+fields_to_send[f].size()+1);
                 ptr=(unsigned char*)mc_gState->m_NetworkParams->GetParam(fields_to_send[f].c_str(),&size);
                 if(ptr == NULL)
                 {
-                    LogPrintf("hdac: Internal error: Invalid parameter set\n");
+                    if(fDebug>4)LogPrintf("hdac: Internal error: Invalid parameter set\n");
                     return false;
                 }
                 vParameterSet.insert(vParameterSet.end(),ptr-MC_PRM_PARAM_SIZE_BYTES,ptr+size);                
@@ -451,7 +451,7 @@ bool PushHdacVerack(CNode* pfrom, bool fIsVerackack)
     if(mapArgs.count("-handshakelocal"))
     {
         CBitcoinAddress address(mapArgs["-handshakelocal"]);
-        LogPrintf("hdac: Using handshake address %d\n",mapArgs["-handshakelocal"].c_str());
+        if(fDebug>0)LogPrintf("hdac: Using handshake address %d\n",mapArgs["-handshakelocal"].c_str());
         if (address.IsValid())    
         {
             CTxDestination dst=address.Get();
@@ -465,69 +465,84 @@ bool PushHdacVerack(CNode* pfrom, bool fIsVerackack)
                 }
                 else
                 {
-                    LogPrintf("hdac: handshakelocal address %s doesn't belong to this wallet, using default address for connection\n",mapArgs["-handshakelocal"].c_str());
+                    if(fDebug>0)LogPrintf("hdac: handshakelocal address %s doesn't belong to this wallet, using default address for connection\n",mapArgs["-handshakelocal"].c_str());
                     printf("\nWarning: handshakelocal address %s doesn't belong to this wallet, using default address for connection\n\n",mapArgs["-handshakelocal"].c_str());                
                 }
             }
             else
             {
-                LogPrintf("hdac: handshakelocal address %s is invalid, using default address for connection\n",mapArgs["-handshakelocal"].c_str());
+                if(fDebug>0)LogPrintf("hdac: handshakelocal address %s is invalid, using default address for connection\n",mapArgs["-handshakelocal"].c_str());
                 printf("\nWarning: handshakelocal address %s is invalid, using default address for connection\n\n",mapArgs["-handshakelocal"].c_str());
             }
         }        
         else
         {
-            LogPrintf("hdac: handshakelocal address %s is invalid, using default address for connection\n",mapArgs["-handshakelocal"].c_str());
+            if(fDebug>0)LogPrintf("hdac: handshakelocal address %s is invalid, using default address for connection\n",mapArgs["-handshakelocal"].c_str());
             printf("\nWarning: handshakelocal address %s is invalid, using default address for connection\n\n",mapArgs["-handshakelocal"].c_str());
         }
     }
 
-    if(!key_found)
+    if(MCP_ANYONE_CAN_CONNECT && pwalletMain->IsCrypted())
     {
-        if(!pwalletMain->GetKeyFromAddressBook(pkey,MC_PTP_CONNECT))
+        if(!fIsVerackack)
         {
-            LogPrintf("hdac: Cannot find address having connect permission, trying default key\n");
-            pkey=pwalletMain->vchDefaultKey;
+            GetRandBytes((unsigned char*)&(pfrom->nVerackNonceSent), sizeof(pfrom->nVerackNonceSent));
+            pfrom->PushMessage("verack", pfrom->nVerackNonceSent, vParameterSet, vParameterSetHash, vSigScript);		  
         }
-        keyID=pkey.GetID();
-    }
-    
-    
-    pfrom->kAddrLocal=keyID;
-    
-    if(!pwalletMain->GetKey(keyID, key))
-    {
-        LogPrintf("hdac: Internal error: Connection address not found in the wallet\n");
-        return false;        
-    }
-    
-    if(key_found)
-    {
-        pkey=key.GetPubKey();
-    }
-    
-    CScript scriptSig;
-    vector<unsigned char> vchSig;
-    if (!key.Sign(signed_hash, vchSig))
-    {
-        LogPrintf("hdac: Internal error: Cannot sign parameter set hash\n");
-        return false;        
-    }
-    
-    vchSig.push_back(0x00);
-    scriptSig << vchSig;
-    scriptSig << ToByteVector(pkey);
-    
-    vSigScript=scriptSig;
-    
-    if(!fIsVerackack)
-    {
-        GetRandBytes((unsigned char*)&(pfrom->nVerackNonceSent), sizeof(pfrom->nVerackNonceSent));
-        pfrom->PushMessage("verack", pfrom->nVerackNonceSent, vParameterSet, vParameterSetHash, vSigScript);        
+        else
+        {
+            pfrom->PushMessage("verackack", vParameterSetHash, vSigScript);				 
+        }
     }
     else
     {
-        pfrom->PushMessage("verackack", vParameterSetHash, vSigScript);                
+        if(!key_found)
+        {
+            if(!pwalletMain->GetKeyFromAddressBook(pkey,MC_PTP_CONNECT))
+            {
+                if(fDebug>0)LogPrintf("hdac: Cannot find address having connect permission, trying default key\n");
+                pkey=pwalletMain->vchDefaultKey;
+            }
+            keyID=pkey.GetID();
+        }
+        
+        
+        pfrom->kAddrLocal=keyID;
+        
+        if(!pwalletMain->GetKey(keyID, key))
+        {
+            if(fDebug>0)LogPrintf("hdac: Internal error: Connection address not found in the wallet\n");
+            return false;        
+        }
+        
+        if(key_found)
+        {
+            pkey=key.GetPubKey();
+        }
+        
+        CScript scriptSig;
+        vector<unsigned char> vchSig;
+        if (!key.Sign(signed_hash, vchSig))
+        {
+            if(fDebug>0)LogPrintf("hdac: Internal error: Cannot sign parameter set hash\n");
+            return false;        
+        }
+     
+        vchSig.push_back(0x00);
+        scriptSig << vchSig;
+        scriptSig << ToByteVector(pkey);
+        
+        vSigScript=scriptSig;
+        
+        if(!fIsVerackack)
+        {
+            GetRandBytes((unsigned char*)&(pfrom->nVerackNonceSent), sizeof(pfrom->nVerackNonceSent));
+            pfrom->PushMessage("verack", pfrom->nVerackNonceSent, vParameterSet, vParameterSetHash, vSigScript);        
+        }
+        else
+        {
+            pfrom->PushMessage("verackack", vParameterSetHash, vSigScript);                
+        }
     }
     
     return true;

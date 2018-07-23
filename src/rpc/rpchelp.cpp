@@ -3119,7 +3119,7 @@ void mc_InitRPCHelpMap13()
         ));
     
     mapHelpStrings.insert(std::make_pair("send",
-            "send \"address\" amount|asset-quantities ( \"comment\" \"comment-to\" )\n"
+            "send \"address\" amount|asset-quantities ( \"comment\" \"comment-to\" subtractfeefromamount )\n"
             "\nSend an amount (or several asset amounts) to a given address. The amount is a real and is rounded to the nearest 0.00000001\n"
             + HelpRequiringPassphraseWrapper() +
             "\nArguments:\n"
@@ -3136,16 +3136,19 @@ void mc_InitRPCHelpMap13()
             "4. \"comment-to\"                     (string, optional) A comment to store the name of the person or organization \n"
             "                                                       to which you're sending the transaction. This is not part of the \n"
             "                                                       transaction, just kept in your wallet.\n"
+            "5. subtractfeefromamount            (boolean, optional, default=false) The fee will be deducted from the amount being sent.\n"
+            "                                               The recipient will receive less bitcoins than you enter in the amount field.\n"
             "\nResult:\n"
             "\"transactionid\"                     (string) The transaction id.\n"
             "\nExamples:\n"
             + HelpExampleCli("send", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" \"{\\\"12345-6789-1234\\\":100,\\\"1234-5678-1234\\\":200}\"")
             + HelpExampleCli("send", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1 \"donation\" \"seans outpost\"")
+            + HelpExampleCli("send", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1 \"\" \"\" true")
             + HelpExampleRpc("send", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", 0.1, \"donation\", \"seans outpost\"")
         ));
     
     mapHelpStrings.insert(std::make_pair("sendtoaddress",
-            "sendtoaddress \"address\" amount|asset-quantities ( \"comment\" \"comment-to\" )\n"
+            "sendtoaddress \"address\" amount|asset-quantities ( \"comment\" \"comment-to\" subtractfeefromamount )\n"
             "\nSend an amount (or several asset amounts) to a given address. The amount is a real and is rounded to the nearest 0.00000001\n"
             + HelpRequiringPassphraseWrapper() +
             "\nArguments:\n"
@@ -3162,11 +3165,14 @@ void mc_InitRPCHelpMap13()
             "4. \"comment-to\"                     (string, optional) A comment to store the name of the person or organization \n"
             "                                                       to which you're sending the transaction. This is not part of the \n"
             "                                                       transaction, just kept in your wallet.\n"
+            "5. subtractfeefromamount            (boolean, optional, default=false) The fee will be deducted from the amount being sent.\n"
+            "                                               The recipient will receive less bitcoins than you enter in the amount field.\n"
             "\nResult:\n"
             "\"transactionid\"                     (string) The transaction id.\n"
             "\nExamples:\n"
             + HelpExampleCli("sendtoaddress", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" \"{\\\"12345-6789-1234\\\":100,\\\"1234-5678-1234\\\":200}\"")
             + HelpExampleCli("sendtoaddress", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1 \"donation\" \"seans outpost\"")
+            + HelpExampleCli("sendtoaddress", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1 \"\" \"\" true")
             + HelpExampleRpc("sendtoaddress", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", 0.1, \"donation\", \"seans outpost\"")
         ));
     
@@ -3242,7 +3248,7 @@ void mc_InitRPCHelpMap14()
         ));
     
     mapHelpStrings.insert(std::make_pair("sendfrom",
-            "sendfrom \"from-address\" \"to-address\" amount|asset-quantities ( \"comment\" \"comment-to\" )\n"
+            "sendfrom \"from-address\" \"to-address\" amount|asset-quantities ( \"comment\" \"comment-to\" subtractfeefromamount )\n"
             "\nSend an amount (or several asset amounts) using specific address.\n"
             + HelpRequiringPassphraseWrapper() +
             "\nArguments:\n"
@@ -3260,16 +3266,19 @@ void mc_InitRPCHelpMap14()
             "5. \"comment-to\"                     (string, optional) A comment to store the name of the person or organization \n"
             "                                                       to which you're sending the transaction. This is not part of the \n"
             "                                                       transaction, just kept in your wallet.\n"
+            "6. subtractfeefromamount            (boolean, optional, default=false) The fee will be deducted from the amount being sent.\n"
+            "                                               The recipient will receive less bitcoins than you enter in the amount field.\n"
             "\nResult:\n"
             "\"transactionid\"  (string) The transaction id.\n"
             "\nExamples:\n"
             + HelpExampleCli("sendfrom", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" \"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" \"{\\\"12345-6789-1234\\\":100,\\\"1234-5678-1234\\\":200}\"")
             + HelpExampleCli("sendfrom", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" \"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1 \"donation\" \"seans outpost\"")
+            + HelpExampleCli("sendfrom", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" \"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1 \"\" \"\" true")
             + HelpExampleRpc("sendfrom", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", \"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", 0.1, \"donation\", \"seans outpost\"")
          ));
     
     mapHelpStrings.insert(std::make_pair("sendfromaddress",
-            "sendfrom \"from-address\" \"to-address\" amount|asset-quantities ( \"comment\" \"comment-to\" )\n"
+            "sendfrom \"from-address\" \"to-address\" amount|asset-quantities ( \"comment\" \"comment-to\" subtractfeefromamount )\n"
             "\nSend an amount (or several asset amounts) using specific address.\n"
             + HelpRequiringPassphraseWrapper() +
             "\nArguments:\n"
@@ -3287,11 +3296,14 @@ void mc_InitRPCHelpMap14()
             "5. \"comment-to\"                     (string, optional) A comment to store the name of the person or organization \n"
             "                                                       to which you're sending the transaction. This is not part of the \n"
             "                                                       transaction, just kept in your wallet.\n"
+            "6. subtractfeefromamount           (boolean, optional, default=false) The fee will be deducted from the amount being sent.\n"
+            "                                              The recipient will receive less bitcoins than you enter in the amount field.\n"
             "\nResult:\n"
             "\"transactionid\"                     (string) The transaction id.\n"
             "\nExamples:\n"
             + HelpExampleCli("sendfromaddress", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" \"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" \"{\\\"12345-6789-1234\\\":100,\\\"1234-5678-1234\\\":200}\"")
             + HelpExampleCli("sendfromaddress", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" \"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1 \"donation\" \"seans outpost\"")
+            + HelpExampleCli("sendfromaddress", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" \"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1 \"\" \"\" true")
             + HelpExampleRpc("sendfromaddress", "\"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", \"1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", 0.1, \"donation\", \"seans outpost\"")
          ));
     
@@ -3491,9 +3503,6 @@ void mc_InitRPCHelpMap15()
             + HelpExampleRpc("settxfee", "0.00001")
         ));
         */
-    /* HDAC START
-     * sk_20180126
-     * */
     mapHelpStrings.insert(std::make_pair("settxfee",
                 "settxfee amount\n"
                 "\nSet the transaction fee per kB.\n"
@@ -3506,7 +3515,6 @@ void mc_InitRPCHelpMap15()
                 + HelpExampleCli("settxfee", "0.1")
                 + HelpExampleRpc("settxfee", "0.1")
             ));
-    /* HDAC END */
     
     mapHelpStrings.insert(std::make_pair("signmessage",
             "signmessage \"address\"|\"privkey\" \"message\"\n"

@@ -329,14 +329,14 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,CWallet *pwallet,CP
             
             if(!mempool.exists(hash))
             {
-                LogPrint("hdac","hdac-miner: Tx not found in the mempool: %s\n",hash.GetHex().c_str());
+                if(fDebug>1)LogPrint("hdac","hdac-miner: Tx not found in the mempool: %s\n",hash.GetHex().c_str());
                 fPreservedMempoolOrder=false;
                 continue;
             }
 		
             if(IsTxBanned(hash))
             {
-                LogPrint("hdac","hdac-miner: Banned Tx: %s\n",hash.GetHex().c_str());
+                if(fDebug>1)LogPrint("hdac","hdac-miner: Banned Tx: %s\n",hash.GetHex().c_str());
                 fPreservedMempoolOrder=false;
                 continue;                
             }
@@ -345,7 +345,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,CWallet *pwallet,CP
             
             if (tx.IsCoinBase() || !IsFinalTx(tx, nHeight))
             {
-                LogPrint("hdac","hdac-miner: Coinbase or not final tx found: %s\n",tx.GetHash().GetHex().c_str());
+                if(fDebug>1)LogPrint("hdac","hdac-miner: Coinbase or not final tx found: %s\n",tx.GetHash().GetHex().c_str());
                 fPreservedMempoolOrder=false;
                 continue;
             }
@@ -359,8 +359,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,CWallet *pwallet,CP
                 {                   
                     if (!mempool.mapTx.count(txin.prevout.hash))
                     {
-                        LogPrintf("ERROR: mempool transaction missing input\n");
-                        if (fDebug) assert("mempool transaction missing input" == 0);
+                        if(fDebug>0)LogPrintf("ERROR: mempool transaction missing input\n");
+                        if (fDebug>1) assert("mempool transaction missing input" == 0);
                         fMissingInputs = true;
                         if (porphan)
                             vOrphan.pop_back();
@@ -387,7 +387,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,CWallet *pwallet,CP
 		
             if (fMissingInputs)
             {
-                LogPrint("hdac","hdac-miner: Missing inputs for %s\n",tx.GetHash().GetHex().c_str());
+                if(fDebug>1)LogPrint("hdac","hdac-miner: Missing inputs for %s\n",tx.GetHash().GetHex().c_str());
                 fPreservedMempoolOrder=false;
                 continue;
             }
@@ -399,7 +399,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,CWallet *pwallet,CP
             
             if (porphan)
             {
-                LogPrint("hdac","hdac-miner: Orphan %s\n",tx.GetHash().GetHex().c_str());
+                if(fDebug>1)LogPrint("hdac","hdac-miner: Orphan %s\n",tx.GetHash().GetHex().c_str());
                 porphan->dPriority = dPriority;
                 porphan->tFee = tFees;
                 fPreservedMempoolOrder=false;
@@ -435,7 +435,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,CWallet *pwallet,CP
                  if(!overblocksize_logged)
                  {
                      overblocksize_logged=true;
-                     LogPrint("hdac","hdac-miner: Over block size: %s\n",tx.GetHash().GetHex().c_str());
+                     if(fDebug>1)LogPrint("hdac","hdac-miner: Over block size: %s\n",tx.GetHash().GetHex().c_str());
                  }
                  continue;
              }
@@ -443,7 +443,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,CWallet *pwallet,CP
              unsigned int nTxSigOps = GetLegacySigOpCount(tx);
              if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS)
              {
-                 LogPrint("hdac","hdac-miner: Over sigop count 1: %s\n",tx.GetHash().GetHex().c_str());
+                 if(fDebug>1)LogPrint("hdac","hdac-miner: Over sigop count 1: %s\n",tx.GetHash().GetHex().c_str());
                  continue;
              }
              
@@ -452,7 +452,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,CWallet *pwallet,CP
              
              if (!view.HaveInputs(tx))
              {
-                 LogPrint("hdac","hdac-miner: No inputs for %s\n",tx.GetHash().GetHex().c_str());
+                 if(fDebug>1)LogPrint("hdac","hdac-miner: No inputs for %s\n",tx.GetHash().GetHex().c_str());
                  
                  BOOST_FOREACH(const CTxIn& txin, tx.vin)
                  {
@@ -490,7 +490,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,CWallet *pwallet,CP
              nTxSigOps += GetP2SHSigOpCount(tx, view);
              if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS)
              {
-                 LogPrint("hdac","hdac-miner: Over sigop count 2: %s\n",tx.GetHash().GetHex().c_str());
+                 if(fDebug>1)LogPrint("hdac","hdac-miner: Over sigop count 2: %s\n",tx.GetHash().GetHex().c_str());
                  continue;
              }
              
@@ -500,7 +500,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,CWallet *pwallet,CP
              {
                  if (!CheckInputs(tx, state, view, false, 0, true))    
                  {
-                     LogPrint("hdac","hdac-miner: CheckInput failure %s\n",tx.GetHash().GetHex().c_str());
+                     if(fDebug>1)LogPrint("hdac","hdac-miner: CheckInput failure %s\n",tx.GetHash().GetHex().c_str());
                      continue;
                  }
              }
@@ -536,11 +536,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,CWallet *pwallet,CP
 
         nLastBlockTx = nBlockTx;
         nLastBlockSize = nBlockSize;
-        //LogPrintf("hdac-miner : nBlockMaxSize = %d, MAX_BLOCK_SIGOPS=%d, MAX_TX_SIGOPS=%d \n", nBlockMaxSize, MAX_BLOCK_SIGOPS, MAX_TX_SIGOPS);		
-        LogPrintf(" hdac-miner : nLastBlockTx=%u, nLastBlockSize=%u \n", nLastBlockTx, nLastBlockSize);
+        //if(fDebug>0)LogPrintf("hdac-miner : nBlockMaxSize = %d, MAX_BLOCK_SIGOPS=%d, MAX_TX_SIGOPS=%d \n", nBlockMaxSize, MAX_BLOCK_SIGOPS, MAX_TX_SIGOPS);		
+        if(fDebug>0)LogPrintf(" hdac-miner : nLastBlockTx=%u, nLastBlockSize=%u \n", nLastBlockTx, nLastBlockSize);
 
         // If block was dropped, this happens too many times        
-        //LogPrintf("CreateNewBlock(): total size %u\n", nBlockSize);
+        //if(fDebug>0)LogPrintf("CreateNewBlock(): total size %u\n", nBlockSize);
 
         // Compute final coinbase transaction.
         txNew.vout[0].nValue = GetBlockValue(nHeight, nFees);
@@ -574,7 +574,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,CWallet *pwallet,CP
             {
                 if(prevCanMine & MC_PTP_MINE)
                 {
-                    LogPrintf("hdac: HdacMiner: cannot mine now, waiting...\n");	// HDAC
+                    if(fDebug>0)LogPrintf("hdac: HdacMiner: cannot mine now, waiting...\n");	// HDAC
                 }
                 testValidity=false;
             }
@@ -582,8 +582,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,CWallet *pwallet,CP
             {
                 if((prevCanMine & MC_PTP_MINE) == 0)
                 {
-                    LogPrintf("CreateNewBlock(): total size %u\n", nBlockSize);
-                    LogPrintf("hdac: HdacMiner: Starting mining...\n");	// HDAC
+                    if(fDebug>0)LogPrintf("CreateNewBlock(): total size %u\n", nBlockSize);
+                    if(fDebug>0)LogPrintf("hdac: HdacMiner: Starting mining...\n");	// HDAC
                 }                    
             }
         }            
@@ -742,7 +742,7 @@ CBlockTemplate* CreateNewBlockWithDefaultKey(CWallet *pwallet,int *canMine,const
             if(*canMine & MC_PTP_MINE)
             {
                 *canMine=0;
-                LogPrintf("hdac: Cannot find address having mining permission\n");        
+                if(fDebug>0)LogPrintf("hdac: Cannot find address having mining permission\n");        
             }
         }
         return NULL;        
@@ -758,8 +758,8 @@ CBlockTemplate* CreateNewBlockWithDefaultKey(CWallet *pwallet,int *canMine,const
 
 bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 {
-    if(fDebug)LogPrint("hdacminor","%s\n", pblock->ToString());
-    if(fDebug)LogPrint("mcminer","hdac-miner: generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue));
+    if(fDebug>1)LogPrint("hdacminor","%s\n", pblock->ToString());
+    if(fDebug>1)LogPrint("mcminer","hdac-miner: generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue));
 
     // Found a solution
     {
@@ -1093,18 +1093,18 @@ double GetMinerAndExpectedMiningStartTime(CWallet *pwallet,CPubKey *lpkMiner,set
         if(kThisMiner.IsValid())
         {
             CBitcoinAddress addr=CBitcoinAddress(kThisMiner.GetID());
-            LogPrint("Hdacminer","Hdac-miner: delay: %8.3fs, miner: %s, height: %d, gap: %8.3fs, miners: (tot: %d, max: %d, pool: %d)%s\n",
-                             *lpdMiningStartTime-mc_TimeNowAsDouble(),addr.ToString().c_str(),
-                             chainActive.Tip()->nHeight,dAverageGap,
-                             mc_gState->m_Permissions->GetMinerCount(),GetMaxActiveMinersCount(),
-                             nMinerPoolSize,fInMinerPool ? ( (nMinerPoolSize > (int)lpsMinerPool->size()) ? " In Pool New" : " In Pool Old" )  : " Not In Pool");
+            if(fDebug>1)LogPrint("Hdacminer","Hdac-miner: delay: %8.3fs, miner: %s, height: %d, gap: %8.3fs, miners: (tot: %d, max: %d, pool: %d)%s\n",
+                                 *lpdMiningStartTime-mc_TimeNowAsDouble(),addr.ToString().c_str(),
+                                 chainActive.Tip()->nHeight,dAverageGap,
+                                 mc_gState->m_Permissions->GetMinerCount(),GetMaxActiveMinersCount(),
+                                 nMinerPoolSize,fInMinerPool ? ( (nMinerPoolSize > (int)lpsMinerPool->size()) ? " In Pool New" : " In Pool Old" )  : " Not In Pool");
         }
         else
         {
-            LogPrint("Hdacminer","Hdac-miner: miner not found, height: %d, gap: %8.3fs, miners: (tot: %d, max: %d, pool: %d)\n",            
-                             chainActive.Tip()->nHeight,dAverageGap,
-                             mc_gState->m_Permissions->GetMinerCount(),GetMaxActiveMinersCount(),
-                             nMinerPoolSize);
+            if(fDebug>1)LogPrint("Hdacminer","Hdac-miner: miner not found, height: %d, gap: %8.3fs, miners: (tot: %d, max: %d, pool: %d)\n",            
+                                 chainActive.Tip()->nHeight,dAverageGap,
+                                 mc_gState->m_Permissions->GetMinerCount(),GetMaxActiveMinersCount(),
+                                 nMinerPoolSize);
         }
     }    
     *lpkMiner=kThisMiner;
@@ -1113,7 +1113,7 @@ double GetMinerAndExpectedMiningStartTime(CWallet *pwallet,CPubKey *lpkMiner,set
 
 void static BitcoinMiner(CWallet *pwallet)
 {
-    LogPrintf("HdacMiner started\n");	// HDAC
+    if(fDebug>0)LogPrintf("HdacMiner started\n");	// HDAC
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("hdac-miner");	// HDAC
 
@@ -1269,7 +1269,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 if(chainActive.Tip()->nHeight <= LastForkedHeight())
                 {
                     EmptyBlockToMine=chainActive.Tip()->nHeight+1;
-                    LogPrint("mcminer","hdac-miner: Chain is forked on height %d, ignoring mine-empty-rounds, mining on height %d\n", LastForkedHeight(),chainActive.Tip()->nHeight+1);
+                    if(fDebug>1)LogPrint("mcminer","hdac-miner: Chain is forked on height %d, ignoring mine-empty-rounds, mining on height %d\n", LastForkedHeight(),chainActive.Tip()->nHeight+1);
                     fMineEmptyBlocks=true;
                 }
             }
@@ -1335,7 +1335,7 @@ void static BitcoinMiner(CWallet *pwallet)
 
             if (!pblocktemplate.get())
             {
-                LogPrintf("Error in HdacMiner: Keypool ran out, please call keypoolrefill before restarting the mining thread\n");	//HDAC
+                if(fDebug>0)LogPrintf("Error in HdacMiner: Keypool ran out, please call keypoolrefill before restarting the mining thread\n");	//HDAC
                 return;
             }
             CBlock *pblock = &pblocktemplate->block;
@@ -1357,9 +1357,7 @@ void static BitcoinMiner(CWallet *pwallet)
 						int wz=0, nf=0, bh=0;
 						GetCurrentBlockWindowInfo(wz, nf, bh);
 						std::string msg = strprintf("Miner[%s] is within Block Window. Waiting... NOW: %d WZ: %d NF: %d BH: %d", GetCoinbaseAddress(kMiner), now, wz, nf, bh);
-						LogPrintf("hdac: %s\n", msg);
-						if(fDebug)
-							std::cout << msg << std::endl;
+						if(fDebug>0)LogPrintf("hdac: %s\n", msg);
 					}
 
 					BW_C_TIMER_ = 0;
@@ -1370,8 +1368,8 @@ void static BitcoinMiner(CWallet *pwallet)
 			}
 			/* HDAC END */
 
-            LogPrint("hdacminer","hdac-miner: Running HdacMiner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
-                ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
+            if(fDebug>0)LogPrint("hdacminer","hdac-miner: Running HdacMiner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
+                                    ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
 
             //
             // Search
@@ -1390,7 +1388,7 @@ void static BitcoinMiner(CWallet *pwallet)
                 {
                     if(chainActive.Tip()->nHeight != EmptyBlockToMine-1)
                     {
-                        LogPrint("mcminer","hdac-miner: Avoiding mining block %d, required %d\n", chainActive.Tip()->nHeight+1,EmptyBlockToMine);
+                        if(fDebug>1)LogPrint("mcminer","hdac-miner: Avoiding mining block %d, required %d\n", chainActive.Tip()->nHeight+1,EmptyBlockToMine);
                         break;
                     }
                 }
@@ -1412,8 +1410,10 @@ void static BitcoinMiner(CWallet *pwallet)
 
                         SetThreadPriority(THREAD_PRIORITY_NORMAL);
 
-                        LogPrintf("HdacMiner: Block Found - %s, prev: %s, height: %d, txs: %d\n",
-                                hash.GetHex(),pblock->hashPrevBlock.ToString().c_str(),mc_gState->m_Permissions->m_Block+1,(int)pblock->vtx.size());	// HDAC
+                        if(fDebug>0)LogPrintf("HdacMiner: Block Found - %s, prev: %s, height: %d, txs: %d\n",
+                                                hash.GetHex(),pblock->hashPrevBlock.ToString().c_str(),
+                                                mc_gState->m_Permissions->m_Block+1,
+                                                (int)pblock->vtx.size());	// HDAC
 
                         #if 0
                         if(mc_gState->m_ProtocolVersionToUpgrade > mc_gState->m_NetworkParams->ProtocolVersion())
@@ -1463,7 +1463,7 @@ void static BitcoinMiner(CWallet *pwallet)
                             if (GetTime() - nLogTime > 30 * 60)
                             {
                                 nLogTime = GetTime();
-                                LogPrintf("hashmeter %6.0f khash/s\n", dHashesPerSec/1000.0);
+                                if(fDebug>0)LogPrintf("hashmeter %6.0f khash/s\n", dHashesPerSec/1000.0);
                             }
                         }
                     }
@@ -1522,7 +1522,7 @@ void static BitcoinMiner(CWallet *pwallet)
     }
     catch (boost::thread_interrupted)
     {
-        LogPrintf("HdacMiner terminated\n");	// HDAC
+        if(fDebug>0)LogPrintf("HdacMiner terminated\n");	// HDAC
         throw;
     }
 }
