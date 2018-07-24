@@ -4258,43 +4258,35 @@ bool ProcessNewBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDis
             return error("%s : CheckBlock FAILED", __func__);
         }
 
-		/* HDAC START */
-		int wz=0, nf=0, bh=0;
-		bool fcheckBlockWz = VerifyBlockWindow(*pblock, pfrom);
-		GetCurrentBlockWindowInfo(wz, nf, bh);
-		if (!fcheckBlockWz) {
+        int wz=0, nf=0, bh=0;
+        bool fcheckBlockWz = VerifyBlockWindow(*pblock, pfrom);
+        GetCurrentBlockWindowInfo(wz, nf, bh);
+        if (!fcheckBlockWz) 
+        {
+            std::string addrMiner = GetBlockMinerAddress(*pblock);
+            
+            if(setBlacklistBlocks.size())
+            {
+                if(setBlacklistBlocks.find(addrMiner) != setBlacklistBlocks.end())
+                {
+                    return error("%s : listed in check_ePoWRule(%s) FAIL . WZ: %d NF: %d BH: %d", __func__, addrMiner, wz, nf, bh);
+                }
+            }
+            
+            if (!CheckePoWRule(addrMiner, chainActive.Height()))
+            {
+                setBlacklistBlocks.insert(addrMiner);
+                return error("%s : check_ePoWRule(%s) FAIL.", __func__, addrMiner);
+            }
 
-			std::string addrMiner = GetCoinbaseAddress(*pblock);;
-
-		        if(setBlacklistBlocks.size())  // HDAC
-			{
-				if(setBlacklistBlocks.find(addrMiner) != setBlacklistBlocks.end())
-				{
-					//InvalidateBlockIfFoundInBlockIndex(*pblock);
-					return error("%s : listed in check_ePoWRule(%s) FAIL . WZ: %d NF: %d BH: %d", __func__, addrMiner, wz, nf, bh);
-				}
-			}
-
-			if (!CheckePoWRule(addrMiner, chainActive.Height()))
-			{
-				//bool fBan = false;
-				//fBan = CNode::Ban(pfrom->addr);
-				//pfrom->CloseSocketDisconnect();
-				//InvalidateBlockIfFoundInBlockIndex(*pblock);
-				setBlacklistBlocks.insert(addrMiner);
-				 ////		WriteBlacklistMinerToDisk(Miner);
-				return error("%s : check_ePoWRule(%s) FAIL.", __func__, addrMiner);
-			}
-
-			return error("%s : VerifyBlockWindow REJECTED. WZ: %d NF: %d BH: %d", __func__, wz, nf, bh);
-		}
-		else
-		{
-			//std::string msg = strprintf("New Block received from %s. %s", (pfrom == NULL ? "ME": ">>>"+pfrom->addr.ToString()), pblock->ToString());
-			std::string msg = strprintf("New Block was received from %s. WZ: %d NF: %d BH: %d", (pfrom == NULL ? "ME": "peer-"+pfrom->addr.ToString()), wz, nf, bh);
-			if(fDebug>0)LogPrintf("hdac: %s\n", msg);
-		}
-		/* HDAC END */
+            return error_status("%s : Consensus rules (FALSE). WZ: %d NF: %d BH: %d", __func__, wz, nf, bh);
+        }
+        else
+        {
+            std::string addrMiner2 = GetBlockMinerAddress(*pblock);
+            std::string msg = strprintf("New Block from %s. MINER(%s) WZ: %d NF: %d BH: %d", (pfrom == NULL ? "ME": "peer-"+pfrom->addr.ToString()), addrMiner2, wz, nf, bh);
+            if(fDebug>0)LogPrintf("hdac: %s\n", msg);
+        }
 
         // Store to disk
         CBlockIndex *pindex = NULL;

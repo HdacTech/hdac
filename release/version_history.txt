@@ -18,3 +18,11 @@
 # 20180608 - fixed encryptwallet ( issue of block sync. )
 # 20160615 - fixed LOCK problem ( critical section range ) - ProcessNewBlock()
 
+----------------
+# - ver:1.05.0
+# 20180629 - changed epow node factor's indicator ( coinbase --> signer )
+# 20180710 - epow V2.0
+# 20180710 - changed Difficulty adjustment Algorithm ( per 480 block --> every blcok )
+# 20180720 - optimized parameters for epow and pow
+
+

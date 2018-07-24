@@ -1349,14 +1349,11 @@ void static BitcoinMiner(CWallet *pwallet)
 				int64_t now=GetAdjustedTime();
 				if(now%10==0)
 				{
-					//std::string msg = strprintf("Miner[%s] is within Block Window. Waiting... NOW: %d BW_C_TIMER: %d", GetCoinbaseAddress(kMiner), now, BW_C_TIMER_);
-					//LogPrintf("hdac: %s\n", msg);
-
 					if(BW_C_TIMER_%10==0)
 					{
 						int wz=0, nf=0, bh=0;
 						GetCurrentBlockWindowInfo(wz, nf, bh);
-						std::string msg = strprintf("Miner[%s] is within Block Window. Waiting... NOW: %d WZ: %d NF: %d BH: %d", GetCoinbaseAddress(kMiner), now, wz, nf, bh);
+						std::string msg = strprintf("Miner[%s] is within Block Window. Waiting... NOW: %d WZ: %d NF: %d BH: %d", GetMinerAddress(kMiner), now, wz, nf, bh);
 						if(fDebug>0)LogPrintf("hdac: %s\n", msg);
 					}
 

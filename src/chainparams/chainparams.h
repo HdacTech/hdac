@@ -86,6 +86,12 @@ public:
     const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
     const std::vector<CAddress>& FixedSeeds() const { return vFixedSeeds; }
     virtual const Checkpoints::CCheckpointData& Checkpoints() const = 0;
+
+    #if 1
+    int GetStartHeightDiffAlg() const { return nStartHeightDiffAlg; }
+    int GetStartHeightEpowV2() const { return nStartHeightEpowV2; }
+    #endif
+    
 protected:
     CChainParams() {}
 
@@ -119,6 +125,13 @@ protected:
     bool fMineBlocksOnDemand;
     bool fSkipProofOfWorkCheck;
     bool fTestnetToBeDeprecatedFieldRPC;
+
+    #if 1
+    // Block height at which the New Diff-Algorithm becomes active
+    int nStartHeightDiffAlg;
+    // Block height at which the expanded epow becomes active
+    int nStartHeightEpowV2;
+    #endif
 };
 
 /** 

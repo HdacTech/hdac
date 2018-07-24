@@ -35,9 +35,13 @@ void GetCurrentBlockWindowInfo(int& wz, int& nf, int& bh);
 /** Get the recent mining continuity of a specific miner */
 int GetMiningContinuity(const std::string strAddr);
 
+int CalculateWindowSize(int nDepth=120);
+int GetMiningContinuity(const std::string strAddr, int Depth);
+int GetMiningCount(int depth, const std::string strAddr, int* time=NULL, bool verbose=false);
+
 /** Get address from public key */
-std::string GetCoinbaseAddress(CPubKey pkey);
-/** Extract coinbase address from block */
+std::string GetMinerAddress(CPubKey pkey);
+std::string GetBlockMinerAddress(const CBlock &block);
 std::string GetCoinbaseAddress(const CBlock& block);
 
 /** Query the active blockchain and summarize the block information */
@@ -47,6 +51,8 @@ void PrintBlockInfo(CNode* pfrom, CBlock* pblock);
 
 //bool IsAganistEPow(CNode* pfrom, CBlock* pblock);
 bool CheckePoWRule(std::string strMinerAddress, int nStartDepth=0);
+
+bool IsEnabledEpowV2(int nheight);
 
 extern bool	BLOCKWINDOW_TOUCHED;
 

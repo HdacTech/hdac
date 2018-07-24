@@ -366,10 +366,6 @@ hdacd_LDADD = \
 
 hdacd_SOURCES = hdac/hdacd.cpp rpc/rpclist.cpp chainparams/buildgenesis.cpp
 
-if TARGET_WINDOWS
-hdacd_SOURCES += hdacd-res.rc
-endif
-
 hdacd_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS)
 hdacd_CPPFLAGS = $(BITCOIN_INCLUDES)
 hdacd_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
@@ -389,10 +385,6 @@ hdacd_cold_LDADD = \
 
 
 hdacd_cold_SOURCES = hdac/hdacd-cold.cpp core/init-cold.cpp rpc/rpclist-cold.cpp chainparams/buildgenesis.cpp
-
-if TARGET_WINDOWS
-hdacd_cold_SOURCES += hdacd-cold-res.rc
-endif
 
 hdacd_cold_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS)
 hdacd_cold_CPPFLAGS = $(BITCOIN_INCLUDES)
@@ -414,9 +406,6 @@ hdac_cli_SOURCES =  hdac/hdac-cli.cpp
 hdac_cli_CPPFLAGS = $(BITCOIN_INCLUDES)
 #
 
-if TARGET_WINDOWS
-hdac_cli_SOURCES += hdac-cli-res.rc
-endif
 hdac_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 # hdac-util binary #
@@ -435,9 +424,6 @@ hdac_util_SOURCES = hdac/hdac-util.cpp chainparams/buildgenesis.cpp
 
 hdac_util_CPPFLAGS = $(BITCOIN_INCLUDES)
 
-if TARGET_WINDOWS
-hdac_util_SOURCES += hdac-util-res.rc
-endif
 hdac_util_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 

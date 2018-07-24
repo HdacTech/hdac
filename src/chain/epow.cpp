@@ -57,7 +57,183 @@ int		BW_CUR_BH = 0;
 
 typedef boost::unordered_map<std::string, int> NodeFactorList;
 
-extern set <std::string> setBlacklistBlocks;		// HDAC
+extern set <std::string> setBlacklistBlocks;
+
+bool IsEnabledEpowV2(int nheight) 
+{ 
+    return ( nheight >= Params().GetStartHeightEpowV2() ); 
+}
+
+#define BLOCKTIME_LIMIT 2
+#define BLOCKTIME_MULTIPLE 2
+#define BLOCKTIME_MAX_LIMIT (BLOCKTIME_LIMIT*BLOCKTIME_MULTIPLE)
+#define MINING_NF 10
+#define MINING_MARGIN_RATE 3
+#define MINING_FACTOR (MINING_MARGIN_RATE*BLOCKTIME_MULTIPLE)
+
+static int GetEpowWindow(int nf, int number, int factor)
+{
+  int ret = 0;
+  const int nMiningFactor = MINING_FACTOR;
+  const int nRate = MINING_MARGIN_RATE;
+
+  if(factor < ret)
+  {
+    if(nf <= nRate)
+    {
+      if(number > (nRate+1))
+      {
+        return 0;
+      }
+    }
+    else if(nf < nMiningFactor)
+    {
+      if(number > nRate)
+      {
+        return 0;
+      }
+    }
+    ret = 1;
+    return ret;
+  }
+
+  if(nf >= nRate)
+  {
+    return 1;
+  }
+  if(number < nMiningFactor)
+  {
+    return 1;  
+  }
+  return ret;
+}
+
+static bool VerifyWindowWithEpow(int64_t time, int64_t blkDifftime, int64_t termTime, int myTime, const std::string strAddr, int nfNew, int miningCountThisMiner)
+{
+  int ret=0; 
+  const int nMiningNf = (MINING_NF*MINING_FACTOR);
+  const int nShortNf = MINING_MARGIN_RATE;
+  const int nMiningFactor = MINING_FACTOR;
+  const int nTimeLimit = BLOCKTIME_MAX_LIMIT;
+
+  CBlockIndex* pindexTip = chainActive.Tip();
+	if(pindexTip==NULL)
+		return false;
+
+  int64_t nTargetBlkDifftime = MCP_TARGET_BLOCK_TIME;
+
+  if(blkDifftime < nTargetBlkDifftime) 
+  {
+    int factor=-1;
+    #ifdef TESTNET
+    int nf = GetNodeFactor(nMiningNf,0);
+    if(nf < nMiningFactor)
+    {
+      return CheckBlockWindow(strAddr);
+    }
+    #endif
+    if(termTime < nTargetBlkDifftime)
+    {
+      int count = GetMiningCount(nShortNf, strAddr);
+      if(count > 0)
+      {
+        if(fDebug>3) LogPrintf("hdac: verify condition short Time %d count %d\n",termTime,count);
+        return false;
+      }
+    }
+
+    if(termTime < nTargetBlkDifftime)
+    {
+        if((miningCountThisMiner > 1) && (myTime < (nTargetBlkDifftime-30)))
+        {
+            if(fDebug>3) LogPrintf("hdac: verify condition myTime %d count %d\n",myTime, miningCountThisMiner);
+            return false;
+        }
+    }
+    
+    ret = GetEpowWindow(nfNew,miningCountThisMiner,factor);
+    return ret ? CheckBlockWindow(strAddr) : false;
+  }
+  else
+  {	
+    int64_t sysDiffTime,tipTime = pindexTip->GetBlockTime();
+    sysDiffTime = time - tipTime;
+    if(sysDiffTime > (MCP_TARGET_BLOCK_TIME*nTimeLimit*nTimeLimit))
+    {
+      if(fDebug>3) LogPrintf("hdac: sysDiffTime Limit %d\n",(MCP_TARGET_BLOCK_TIME*nTimeLimit*nTimeLimit));
+      return true;
+    }
+
+    if(blkDifftime > (MCP_TARGET_BLOCK_TIME*nTimeLimit))
+    {
+      int Continuity = GetMiningContinuity(strAddr, MINING_NF);
+      if(fDebug>0) LogPrintf("hdac: blkDifftime Limit %d %d\n",(MCP_TARGET_BLOCK_TIME*nTimeLimit),Continuity);
+      ret = GetEpowWindow(nfNew,Continuity,miningCountThisMiner);
+      return ret ? true : CheckBlockWindow(strAddr);
+    }
+    return CheckBlockWindow(strAddr);
+  }
+}
+
+std::string GetBlockMinerAddress(const CBlock &block)
+{
+    if(chainActive.Tip() != NULL)
+    {
+        if(!IsEnabledEpowV2(chainActive.Tip()->nHeight))
+            return GetCoinbaseAddress(block);
+    }
+    
+    unsigned char sig[255];
+    unsigned char signer[256];
+    int sig_size = 0;
+    int key_size = 0;
+    uint32_t hash_type;
+    std::string strAddr="";
+	
+    signer[0]=0;
+
+    for (unsigned int i = 0; i < block.vtx.size(); i++)
+    {
+        const CTransaction &tx = block.vtx[i];
+        if (tx.IsCoinBase())
+        {
+            for (unsigned int j = 0; j < tx.vout.size(); j++)
+            {
+                mc_gState->m_TmpScript1->Clear();
+
+                const CScript& script1 = tx.vout[j].scriptPubKey;
+                CScript::const_iterator pc1 = script1.begin();
+
+                mc_gState->m_TmpScript1->SetScript((unsigned char*)(&pc1[0]),(size_t)(script1.end()-pc1),MC_SCR_TYPE_SCRIPTPUBKEY);
+
+                for (int e = 0; e < mc_gState->m_TmpScript1->GetNumElements(); e++)
+                {
+                    if(signer[0] == 0)
+                    {
+                       mc_gState->m_TmpScript1->SetElement(e);
+
+                        sig_size=255;
+                        key_size=255;
+                        if(mc_gState->m_TmpScript1->GetBlockSignature(sig, &sig_size, &hash_type, signer+1,&key_size) == 0)
+                        {
+                            signer[0]=(unsigned char)key_size;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if(signer[0]>0)
+    {
+        std::vector<unsigned char> vchPubKey=std::vector<unsigned char> (signer+1, signer+1+signer[0]);
+        CPubKey pubKeyOut(vchPubKey);
+        CBitcoinAddress maddr = CBitcoinAddress(pubKeyOut.GetID());
+        strAddr = maddr.ToString();
+    }
+
+    return strAddr;
+}
 
 /*
   The block window size is calculated as a block window function with the mining node parameter as the main variable.
@@ -78,9 +254,6 @@ extern set <std::string> setBlacklistBlocks;		// HDAC
 // Verify the block window policy against the miner of the received block
 bool VerifyBlockWindow(const CBlock& block, CNode* pfrom)
 {
-	//if(!MCP_ANYONE_CAN_MINE)
-	//	return true;
-
 	if(chainActive.Tip()!=NULL)
 		BW_CUR_BH = chainActive.Tip()->nHeight;
 
@@ -94,13 +267,13 @@ bool VerifyBlockWindow(const CBlock& block, CNode* pfrom)
 		{
 			std::string msg = strprintf("\t>> BLOCK TIME DIFF: %d BLK T: %d ADJ T: %d RCV FROM: %s\nBLOCK_TIME: %d(sec)", diffBlkTime, blockTime, now, (pfrom == NULL ? "ME":">>>"+pfrom->addr.ToString()), MCP_TARGET_BLOCK_TIME);
 			LogPrintf("hdac: %s\n", msg);
-			//std::cout << msg << std::endl;
 		}
 
 		return true;
 	}
-
-	std::string strMiner = GetCoinbaseAddress(block);
+	
+    std::string strMiner = GetBlockMinerAddress(block);
+    
 	if(strMiner.length()<0x20)
 	{
 		std::string msg = strprintf("%s Miner address is invalid. ADDR=%s", (pfrom == NULL ? "ME": ">>>"+pfrom->addr.ToString()), strMiner);
@@ -108,6 +281,39 @@ bool VerifyBlockWindow(const CBlock& block, CNode* pfrom)
 
 		return false;
 	}
+
+    CBlockIndex* pindexTip = chainActive.Tip();
+  	if(pindexTip==NULL)
+  		return false;
+
+    
+    if(IsEnabledEpowV2(pindexTip->nHeight))
+    {
+        CBlockIndex* pindexRef = pindexTip->GetAncestor(pindexTip->nHeight - MINING_MARGIN_RATE);
+        int64_t blkDifftime, tipTime = pindexTip->GetBlockTime();
+        int64_t blkTermTime = (tipTime - pindexRef->GetBlockTime());
+        int nfNew = GetNodeFactor(MINING_NF, 0);
+        int nMytime=0, miningCountThisMiner=0;
+        miningCountThisMiner = GetMiningCount(MINING_NF*BLOCKTIME_MULTIPLE, strMiner, &nMytime, true);        
+        blkDifftime = blockTime-tipTime;
+        if(fDebug>0)
+        {
+            std::string msg = strprintf("%s blkDiffT: %d diffT: %d (%d-%d), nf %d cnt %d / %d-%d=%d", 
+                                           (pfrom==NULL?"":">>>"+pfrom->addr.ToString()),
+                                           blkDifftime,
+                                           diffBlkTime,
+                                           now,
+                                           blockTime,
+                                           nfNew,
+                                           miningCountThisMiner,
+                                           pindexTip->nHeight, 
+                                           pindexRef->nHeight,
+                                           blkTermTime);
+            LogPrintf("hdac: %s\n", msg);
+        }
+        
+        return VerifyWindowWithEpow(now, blkDifftime, blkTermTime, nMytime, strMiner, nfNew, miningCountThisMiner);
+    }
 
 	if(IsMiningBlackout())	// CIH ??????? - ponder more deeply
 	{
@@ -142,10 +348,9 @@ bool VerifyBlockWindow(const CBlock& block, CNode* pfrom)
 
 	if(fDebug>0)
 	{
-		std::string msg = strprintf("%s BLOCK TIME DIFF: %d BLK T: %d ADJ T: %d  TARGET_BLOCK_TIME: %d(sec)", (pfrom == NULL ? "":">>>"+pfrom->addr.ToString()), diffBlkTime, blockTime, now, MCP_TARGET_BLOCK_TIME);
+		std::string msg = strprintf("%s BLOCK TIME DIFF: %d %d BLK T: %d ADJ T: %d  TARGET_TIME: %d(sec)", (pfrom == NULL ? "":">>>"+pfrom->addr.ToString()), (blockTime-chainActive.Tip()->GetBlockTime()),diffBlkTime, blockTime, now, MCP_TARGET_BLOCK_TIME);
 		LogPrintf("hdac: %s\n", msg);
 	}
-
 	return CheckBlockWindow(strMiner);
 }
 
@@ -193,10 +398,17 @@ bool IsMiningBlackout()
 
 bool CheckBlockWindow(std::string strMiner)
 {
-	int wz = 0;
-	int miningDepth = GetMiningDepth(strMiner);
-	//nodeFactor = GetNodeFactor(NODEFACTOR_DEFAULT_DEPTH);
-	wz = GetBlockWindowSize();
+    int wz = 0;
+    int miningDepth = GetMiningDepth(strMiner);
+    CBlockIndex* pindexTip = chainActive.Tip();
+    if(IsEnabledEpowV2(pindexTip->nHeight))
+    {
+      wz = CalculateWindowSize();
+    }
+    else
+    {
+      wz = GetBlockWindowSize();
+    }
 
 	if(miningDepth<0)
 	{
@@ -222,7 +434,7 @@ bool CheckBlockWindow(std::string strMiner)
 
 	if(fDebug>0)
 	{
-		std::string msg = strprintf("WZ: %d MINER: %s M-DEPTH: %d", wz, strMiner, miningDepth);
+		std::string msg = strprintf("WZ: %d MINER: %s M-DEPTH: %d Cont: %d", wz, strMiner, miningDepth,GetMiningContinuity(strMiner));
 		LogPrintf("hdac: %s\n", msg);
 	}
 
@@ -260,9 +472,6 @@ bool CheckBlockWindow(CPubKey minerPubKey)
 */
 int GetBlockWindowSize()
 {
-	//if(!MCP_ANYONE_CAN_MINE)
-	//		return 0;
-
 	if(!BLOCKWINDOW_TOUCHED)
 	{
 		//std::string msg = strprintf("GetBlockWindowSize: blockwindow touched? %s, last_blockwindow_sz=%d", (g_blockwindow_touched ? "true":"false"), last_blockwindow_sz);
@@ -297,17 +506,24 @@ int GetBlockWindowSize()
 	nf2 = GetNodeFactor(depth2);
 	*/
 
-
-	// consider N < 10
-	if(x>BLOCK_NUM_OF_MAX_BLOCKWINDOW)
-	{
-		x = BLOCK_NUM_OF_MAX_BLOCKWINDOW;
-		blockWz = (int) std::floor(BLOCKWINDOW_NODE_FACTOR_RATE*nf);
-	}
-	else
-	{
-		blockWz = (int) std::floor((BLOCKWINDOW_NODE_FACTOR_RATE*x*nf)/BLOCK_NUM_OF_MAX_BLOCKWINDOW);
-	}
+    if(IsEnabledEpowV2(x)) //0627 height 106322 + 1 month (480*30=14400)
+    {
+        blockWz = (int) std::floor(BLOCKWINDOW_NODE_FACTOR_RATE*nf);
+        blockWz = (blockWz>1) ? 1 : 0;
+    }
+    else
+    {
+        // consider N < 10
+        if(x>BLOCK_NUM_OF_MAX_BLOCKWINDOW)
+        {
+            x = BLOCK_NUM_OF_MAX_BLOCKWINDOW;
+            blockWz = (int) std::floor(BLOCKWINDOW_NODE_FACTOR_RATE*nf);
+        }
+        else
+        {
+            blockWz = (int) std::floor((BLOCKWINDOW_NODE_FACTOR_RATE*x*nf)/BLOCK_NUM_OF_MAX_BLOCKWINDOW);
+        }
+    }
 
 	// check once again
 	if(blockWz >= nf)
@@ -321,7 +537,7 @@ int GetBlockWindowSize()
 	return blockWz;
 }
 
-int GetBlockWindowSize(int nStartDepth)  // HDAC
+int GetBlockWindowSize(int nStartDepth)
 {
 	int blockWz = -1;	// Block Window Size
 
@@ -346,7 +562,7 @@ int GetBlockWindowSize(int nStartDepth)  // HDAC
 	if(pindex != NULL)
 		x = pindex->nHeight;
 	else
-		return -1;  // error
+		return -1;
 
 	// DEPTH*2
 	/*
@@ -378,14 +594,6 @@ int GetBlockWindowSize(int nStartDepth)  // HDAC
 // node factor (the number of nodes in the last 480 blocks)
 int GetNodeFactor(int depth)
 {
-    /* // CIH 2017.12.07
-	if(!MCP_ANYONE_CAN_MINE)
-	{
-		BW_CUR_NF = mc_gState->m_Permissions->GetMinerCount();   // GetActiveMinerCount with diversity=0
-		return BW_CUR_NF;
-	}
-	*/
-
 	int nodeFactor=0;
 	if(depth<1)
 		depth = 0;
@@ -401,68 +609,6 @@ int GetNodeFactor(int depth)
 
 	if(pindexTip == NULL)
 		return BW_CUR_NF;
-
-	/*
-	NodeFactorList list;
-	std::cout << "TIP H: " << nHeight << std::endl;
-
-	pindex = chainActive[idx];
-
-	for (; pindex ; pindex = chainActive[++idx])
-	{
-		CBlock block;
-		if(!ReadBlockFromDisk(block, pindex))
-		{
-			std::string msg = "Can't read block from disk";
-			LogPrintf("hdac: %s\n", msg);
-			std::cout << msg << std::endl;
-			continue;
-		}
-
-		std::string str_addr_out;
-
-		if(block.vtx.size()>0 && block.vtx[0].IsCoinBase())
-		{
-			const CTxOut& txout = block.vtx[0].vout[0];
-
-			txnouttype whichType;
-			const CScript& prevScript = txout.scriptPubKey;
-			vector<CTxDestination> addressRets;
-			int nRequiredRet;
-
-			if(!ExtractDestinations(prevScript,whichType,addressRets,nRequiredRet))
-			{
-				std::string msg = "ExtractDestination() fail.";
-				LogPrintf("hdac: %s\n", msg);
-				std::cout << msg << std::endl;
-			}
-			else
-			{
-				if(addressRets.size()>0)
-				{
-					const CTxDestination &addr = addressRets[0];
-					str_addr_out = CBitcoinAddress(addr).ToString();
-
-					std::cout << "H: "<<pindex->nHeight <<" IDX: " << idx << " ADDR: " << str_addr_out << std::endl;
-
-					list.insert(make_pair(str_addr_out, pindex->nHeight));
-				}
-			}
-		}
-	}
-
-	std::cout << std::endl;
-	std::cout << "list  :" << list.size() << std::endl;
-
-	NodeFactorList::iterator it = list.begin();
-	while(it != list.end())
-	{
-		std::cout << "" << it->first << " " << it->second << std::endl;
-
-		it++;
-	}
-	std::cout << std::endl;
-	*/
 
 	NodeFactorList nodeFactorList;
 	pindex = chainActive.Tip();
@@ -480,63 +626,14 @@ int GetNodeFactor(int depth)
 
 		std::string str_addr_out;
 
-		if(block.vtx.size()>0 && block.vtx[0].IsCoinBase())
-		{
-			const CTxOut& txout = block.vtx[0].vout[0];
-
-			txnouttype whichType;
-			const CScript& prevScript = txout.scriptPubKey;
-			vector<CTxDestination> addressRets;
-			int nRequiredRet;
-
-			if(!ExtractDestinations(prevScript,whichType,addressRets,nRequiredRet))
-			{
-				std::string msg = "ExtractDestination() fail.";
-				if(fDebug>0)LogPrintf("hdac: %s\n", msg);
-			}
-			else
-			{
-				if(addressRets.size()>0)
-				{
-					const CTxDestination &addr = addressRets[0];
-					str_addr_out = CBitcoinAddress(addr).ToString();
-
-					//std::cout << "H: "<<pindex->nHeight <<" IDX: " << idx << " ADDR: " << str_addr_out << std::endl;
-
-					//nodeFactorList.insert(make_pair(str_addr_out, pindex->nHeight));
-//			           if(setBlacklistBlocks.size())  // HDAC
-//			            {
-//			                if(setBlacklistBlocks.find(str_addr_out) == setBlacklistBlocks.end())
-//			                {
-//								nodeFactorList.insert(make_pair(str_addr_out, pindex->nHeight));
-//			                }
-//			            }
-//			           else
-//			           {
-
-					nodeFactorList.insert(make_pair(str_addr_out, pindex->nHeight));
-//			           }
-				}
-			}
-		}
-
+        str_addr_out = GetBlockMinerAddress(block);
+        if(str_addr_out.length()>=0x20)
+        {
+            nodeFactorList.insert(make_pair(str_addr_out, pindex->nHeight));
+        }
 	}
 
-	/*
-	NodeFactorList::iterator it2 = list2.begin();
-	std::cout << std::endl;
-	std::cout << "list2 :" << list2.size() << std::endl;
-
-	while(it2 != list2.end())
-	{
-		std::cout << "" << it2->first << " " << it2->second << std::endl;
-
-		it2++;
-	}
-	std::cout << std::endl;
-	*/
-
-	nodeFactor = nodeFactorList.size();	//
+	nodeFactor = nodeFactorList.size();
 
 	BW_CUR_NF = nodeFactor;
 
@@ -544,7 +641,7 @@ int GetNodeFactor(int depth)
 }
 
 // GetNodeFactor for given height
-int GetNodeFactor(int depth, int nStartDepth)  		// HDAC
+int GetNodeFactor(int depth, int nStartDepth)
 {
  	int nodeFactor=0;
 	if(depth<1)
@@ -584,35 +681,14 @@ int GetNodeFactor(int depth, int nStartDepth)  		// HDAC
 
 		std::string str_addr_out;
 
-		if(block.vtx.size()>0 && block.vtx[0].IsCoinBase())
-		{
-			const CTxOut& txout = block.vtx[0].vout[0];
-
-			txnouttype whichType;
-			const CScript& prevScript = txout.scriptPubKey;
-			vector<CTxDestination> addressRets;
-			int nRequiredRet;
-
-			if(!ExtractDestinations(prevScript,whichType,addressRets,nRequiredRet))
-			{
-				std::string msg = "ExtractDestination() fail.";
-				if(fDebug>0)LogPrintf("hdac: %s\n", msg);
-			}
-			else
-			{
-				if(addressRets.size()>0)
-				{
-					const CTxDestination &addr = addressRets[0];
-					str_addr_out = CBitcoinAddress(addr).ToString();
-
-					nodeFactorList.insert(make_pair(str_addr_out, pindex->nHeight));
-				}
-			}
-		}
-
+        str_addr_out = GetBlockMinerAddress(block);
+        if(str_addr_out.length()>=0x20)
+        {
+            nodeFactorList.insert(make_pair(str_addr_out, pindex->nHeight));
+        }
 	}
 
-	nodeFactor = nodeFactorList.size();	//
+	nodeFactor = nodeFactorList.size();
 
 	return nodeFactor;
 }
@@ -642,38 +718,15 @@ int GetMiningDepth(const std::string strAddr)
 			continue;
 		}
 
-		if(block.vtx.size()>0 && block.vtx[0].IsCoinBase())
-		{
-			const CTxOut& txout = block.vtx[0].vout[0];
-
-			txnouttype whichType;
-			const CScript& prevScript = txout.scriptPubKey;
-			vector<CTxDestination> addressRets;
-			int nRequiredRet;
-
-			if(!ExtractDestinations(prevScript,whichType,addressRets,nRequiredRet))
-			{
-				std::string msg = "ExtractDestination() fail.";
-				if(fDebug>0)LogPrintf("hdac: %s\n", msg);
-			}
-			else
-			{
-				if(addressRets.size()>0)
-				{
-					const CTxDestination &addr = addressRets[0];
-					str_addr_out = CBitcoinAddress(addr).ToString();
-
-					//std::cout << "IDX: " << idx << " H: " << pindex->nHeight << " BLK ADDR: " << str_addr_out << " <-" << (strAddr.compare(str_addr_out) ? "X":"O") << "-> MINER: " << strAddr << std::endl;
-
-					if(strAddr.compare(str_addr_out) == 0)
-					{
-						miningDepth = idx;	// x idx+1
-						break;
-					}
-				}
-			}
-		}
-
+        str_addr_out = GetBlockMinerAddress(block);
+        if(str_addr_out.length()>=0x20)
+        {
+            if(strAddr.compare(str_addr_out) == 0)
+            {
+                miningDepth = idx;
+                break;
+            }
+        }
 	}
 
 	return miningDepth;
@@ -698,48 +751,163 @@ int GetMiningContinuity(const std::string strAddr)
 			continue;
 		}
 
-		if(block.vtx.size()>0 && block.vtx[0].IsCoinBase())
-		{
-			const CTxOut& txout = block.vtx[0].vout[0];
-
-			txnouttype whichType;
-			const CScript& prevScript = txout.scriptPubKey;
-			vector<CTxDestination> addressRets;
-			int nRequiredRet;
-
-			if(!ExtractDestinations(prevScript,whichType,addressRets,nRequiredRet))
-			{
-				std::string msg = "ExtractDestination() fail.";
-				if(fDebug>0)LogPrintf("hdac: %s\n", msg);
-			}
-			else
-			{
-				if(addressRets.size()>0)
-				{
-					const CTxDestination &addr = addressRets[0];
-					str_addr_out = CBitcoinAddress(addr).ToString();
-
-					//std::cout << "IDX: " << idx << " H: " << pindex->nHeight << " BLK ADDR: " << str_addr_out << " <-" << (strAddr.compare(str_addr_out) ? "X":"O") << "-> MINER: " << strAddr << std::endl;
-
-					if(strAddr.compare(str_addr_out) == 0)
-					{
-						++miningContinuity;
-						continue;
-					}
-					else
-					{
-						break;
-					}
-				}
-			}
-		}
-
+        str_addr_out = GetBlockMinerAddress(block);
+        if(str_addr_out.length()>=0x20)
+        {                
+            if(strAddr.compare(str_addr_out) == 0)
+            {
+                ++miningContinuity;
+                continue;
+            }
+            else
+            {
+                break;
+            }
+        }
 	}
 
 	return miningContinuity;
 }
 
-std::string GetCoinbaseAddress(CPubKey pkey)
+int CalculateWindowSize(int nDepth)
+{
+    if(!BLOCKWINDOW_TOUCHED)
+    {
+      return BLOCKWINDOW_LAST_SZ;
+    }
+
+    CBlockIndex* pindexTip = chainActive.Tip();
+    int nSetRefBlock = nDepth;
+    int nSetRefBlocknext = (nSetRefBlock/2);
+    CBlockIndex* pindexRef = pindexTip->GetAncestor(pindexTip->nHeight - nSetRefBlock);
+    int nRefBlkTime = (pindexTip->GetBlockTime() - pindexRef->GetBlockTime());
+    
+  	int blockWz = -1,Wz;
+  	int nf = GetNodeFactor(nSetRefBlock);
+    int nWindowTime = nDepth*Params().Interval();
+  
+    if(!nSetRefBlock || !nWindowTime)
+      return blockWz;
+
+    if((nf < (nSetRefBlock>>4)) || (nf > (nSetRefBlock>>1)))
+      nf = (nSetRefBlock>>1); 
+  
+    Wz = (int)std::floor((nSetRefBlock/nf)*BLOCKWINDOW_NODE_FACTOR_RATE);
+    blockWz = (Wz>>1);
+  
+    if(nRefBlkTime > nWindowTime*2)
+    {
+      CBlockIndex* pindexRefnext = pindexTip->GetAncestor(pindexTip->nHeight - nSetRefBlocknext);
+      int nRefBlkTimenext = (pindexTip->GetBlockTime() - pindexRefnext->GetBlockTime());
+      if(nRefBlkTimenext > nWindowTime)
+      {
+        blockWz = (nf==(nSetRefBlock>>1)) ? std::min(blockWz, 0) : std::min(blockWz, 1);
+      }
+      else
+      {
+        blockWz = (nf==(nSetRefBlock>>1)) ? std::min(blockWz, 0) : std::min(std::max(blockWz, 1),1);
+      }
+    }
+    else
+    {
+      if(nf < (nSetRefBlock>>3))
+      {
+        blockWz = (nf==(nSetRefBlock>>1)) ? std::min(blockWz, 0) : std::min(std::max(blockWz, 1),2);
+      }
+      else
+      {
+        blockWz = (nf==(nSetRefBlock>>1)) ? std::min(blockWz, 0) : std::min(std::max(blockWz, 1),1);
+      }
+    }
+
+    BLOCKWINDOW_LAST_SZ = blockWz;
+    BLOCKWINDOW_TOUCHED = false;
+    BW_CUR_WZ = blockWz;
+    return blockWz;
+}
+
+int GetMiningContinuity(const std::string strAddr, int Depth)
+{
+	int miningContinuity = 0;
+	int maxDepth = Depth;
+	std::string str_addr_out;
+	CBlockIndex* 	pindex = chainActive.Tip();
+
+	for (int idx=0;
+			idx<maxDepth && pindex != NULL && pindex->pprev;
+		    pindex = pindex->pprev, idx++)
+	{
+		CBlock block;
+		if(!ReadBlockFromDisk(block, pindex))
+		{
+			std::string msg = "Can't read block from disk";
+			if(fDebug>0)LogPrintf("hdac: %s\n", msg);
+			continue;
+		}
+
+        str_addr_out = GetBlockMinerAddress(block);
+        if(str_addr_out.length()>=0x20)
+        {                
+            if(strAddr.compare(str_addr_out) == 0)
+            {
+                ++miningContinuity;
+                continue;
+            }
+            else
+            {
+                break;
+            }
+        }
+	}
+
+	return miningContinuity;
+}
+
+int GetMiningCount(int depth, const std::string strAddr, int* time, bool verbose)
+{
+    int miningCount = 0;
+    int maxDepth = depth;
+    std::string str_addr_out;
+    CBlockIndex* 	pindex = chainActive.Tip();
+    vector<int64_t> miningBlockTime;
+    int nCompareTime=0, nBlocklist=0;
+
+    for(int idx=0; idx<maxDepth && pindex != NULL && pindex->pprev; pindex = pindex->pprev, idx++)
+    {
+        CBlock block;
+        if(!ReadBlockFromDisk(block, pindex))
+        {
+            std::string msg = "Can't read block from disk";
+            if(fDebug>0)LogPrintf("hdac: %s\n", msg);
+            continue;
+        }
+
+        str_addr_out = GetBlockMinerAddress(block);
+        if(str_addr_out.length()>=0x20)
+        {                
+            if(strAddr.compare(str_addr_out) == 0)
+            {
+                ++miningCount;
+                if(verbose)
+                {
+                  miningBlockTime.push_back(pindex->GetBlockTime());
+                }
+            }
+        }
+    }
+
+    if(verbose)
+    {
+      nBlocklist = miningBlockTime.size();
+      if(time != NULL && nBlocklist > 0)
+      {
+        *time = (miningBlockTime.front() - miningBlockTime.back())/miningCount;
+      }
+    }
+    return miningCount;
+}
+
+std::string GetMinerAddress(CPubKey pkey)
 {
 	std::string strAddr="";
 
@@ -928,25 +1096,6 @@ void PrintBlockInfo(CNode* pfrom, CBlock* pblock)	// CIH
    }
 }
 
-//bool IsAgainstEPow(CNode* pfrom, CBlock* pblock)
-//{
-//	bool fcheckBlockWz = VerifyBlockWindow(*pblock, pfrom);
-//
-////	int wz=0, nf=0, bh=0;
-////	GetCurrentBlockWindowInfo(wz, nf, bh);
-//	std::string Miner = GetCoinbaseAddress(*pblock);
-//	int nContinuity = GetMiningContinuity(Miner);
-//
-//	if ( !fcheckBlockWz && !IsMiningBlackout() && (nContinuity > 1) && !IsInitialBlockDownload())
-//	{
-//		setBlacklistBlocks.insert(Miner);
-//		WriteBlacklistMinerToDisk(Miner);
-//		return true;
-//	}
-//
-//	return false;
-//}
-
  bool CheckePoWRule(std::string strMinerAddress, int blockHeight)
  {
  	if(IsInitialBlockDownload())
@@ -955,12 +1104,6 @@ void PrintBlockInfo(CNode* pfrom, CBlock* pblock)	// CIH
  	int miningContinuity = GetMiningContinuity(strMinerAddress);
  	int wz=0, nf=0, bh=0;
  	GetCurrentBlockWindowInfo(wz, nf, bh);
-// 	int nf = GetNodeFactor(NODEFACTOR_DEFAULT_DEPTH, blockHeight);
-//  if(nf == -1)
-// 		return true;
-// 	int wz = GetBlockWindowSize(blockHeight);
-//  if(wz == -1)
-// 		return true;
 
  	if(miningContinuity > wz)
  	{
