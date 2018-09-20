@@ -267,6 +267,12 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "estimatepriority", 0 },
     { "prioritisetransaction", 1 },
     { "prioritisetransaction", 2 },
+    // MYJOB : implement
+    { "getaddressmempool", 0 },
+    //{"getaddressutxos",  1 },
+    { "getaddressdeltas", 0 },
+    { "getaddresstxids", 0 },
+    { "getaddressbalance", 0 },
 };
 
 class CRPCConvertTable
@@ -290,6 +296,9 @@ CRPCConvertTable::CRPCConvertTable()
     for (unsigned int i = 0; i < n_elem; i++) {
         members.insert(std::make_pair(vRPCConvertParams[i].methodName,
                                       vRPCConvertParams[i].paramIdx));
+    }
+    for (std::set<std::pair<std::string, int> >::iterator i = members.begin(); i != members.end(); i++) {
+        std::cout << i->first << ", " << i->second << std::endl;
     }
 }
 
@@ -353,10 +362,10 @@ CRPCConvertTableMayBeString::CRPCConvertTableMayBeString()
     const unsigned int n_elem =
         (sizeof(vRPCConvertParamsMayBeString) / sizeof(vRPCConvertParamsMayBeString[0]));
 
-    for (unsigned int i = 0; i < n_elem; i++) {
-        members.insert(std::make_pair(vRPCConvertParamsMayBeString[i].methodName,
-                                      vRPCConvertParamsMayBeString[i].paramIdx));
-    }
+//    for (unsigned int i = 0; i < n_elem; i++) {
+//        members.insert(std::make_pair(vRPCConvertParamsMayBeString[i].methodName,
+//                                      vRPCConvertParamsMayBeString[i].paramIdx));
+//    }
 }
 
 static CRPCConvertTableMayBeString rpcCvtTableMayBeString;

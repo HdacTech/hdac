@@ -117,6 +117,14 @@ static const CRPCCommand vRPCCommands[] =
     { "hidden",             "appendrawmetadata",      &appendrawmetadata,      false,     false,      true },
     { "rawtransactions",    "appendrawdata",          &appendrawmetadata,      false,     false,      true },
 
+    // MYJOB : implement
+    /* Address index */
+    { "addressindex",       "getaddressmempool",      &getaddressmempool,      true,      false,      false  },
+    //{ "addressindex",       "getaddressutxos",        &getaddressutxos,        false,     false,      false  },
+    { "addressindex",       "getaddressdeltas",       &getaddressdeltas,       false,     false,      false  },
+    { "addressindex",       "getaddresstxids",        &getaddresstxids,        false,     false,      false  },
+    { "addressindex",       "getaddressbalance",      &getaddressbalance,      false,     false,      false  },
+
     /* Utility functions */
     { "util",               "createkeypairs",         &createkeypairs,         true,      true ,      false },
     { "util",               "createmultisig",         &createmultisig,         true,      true ,      false },

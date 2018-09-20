@@ -160,6 +160,12 @@ extern void EnsureWalletIsUnlocked();
 extern json_spirit::Value help(const json_spirit::Array& params, bool fHelp); 
 extern json_spirit::Value stop(const json_spirit::Array& params, bool fHelp); 
 
+// MYJOB : implement
+extern json_spirit::Value getaddresstxids(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getaddressbalance(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getaddressdeltas(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getaddressmempool(const json_spirit::Array& params, bool fHelp);  // in rpcmisc.cpp
+//extern json_spirit::Value getaddressutxos(const json_spirit::Array& params, bool fHelp);
 
 extern json_spirit::Value getconnectioncount(const json_spirit::Array& params, bool fHelp); // in rpcnet.cpp
 extern json_spirit::Value getpeerinfo(const json_spirit::Array& params, bool fHelp);
