@@ -297,9 +297,6 @@ CRPCConvertTable::CRPCConvertTable()
         members.insert(std::make_pair(vRPCConvertParams[i].methodName,
                                       vRPCConvertParams[i].paramIdx));
     }
-    for (std::set<std::pair<std::string, int> >::iterator i = members.begin(); i != members.end(); i++) {
-        std::cout << i->first << ", " << i->second << std::endl;
-    }
 }
 
 static CRPCConvertTable rpcCvtTable;
