@@ -1474,6 +1474,12 @@ Value getaddresstxids(const Array& params, bool fHelp)
         if (startValue.type() == int_type && endValue.type() == int_type) {
             start = startValue.get_int();
             end = endValue.get_int();
+	    if (start <= 0 || end <= 0) {
+       	      throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Start and end is expected to be greater than zero");
+            }
+            if (end < start) {
+              throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "End value is expected to be greater than start");
+            }
         }
     }
 
@@ -1481,11 +1487,11 @@ Value getaddresstxids(const Array& params, bool fHelp)
 
     for (std::vector<std::pair<uint160, int> >::iterator it = addresses.begin(); it != addresses.end(); it++) {
         if (start > 0 && end > 0) {
-            if (!GetAddressIndex((*it).first, (*it).second, addressIndex, start, end)) {
+	    if (!GetAddressIndex((*it).first, (*it).second, addressIndex, start, end)) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available for address");
             }
-        } else {
-            if (!GetAddressIndex((*it).first, (*it).second, addressIndex)) {
+	} else {
+	    if (!GetAddressIndex((*it).first, (*it).second, addressIndex)) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available for address");
             }
         }
