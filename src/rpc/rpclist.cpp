@@ -90,6 +90,9 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "liststreams",            &liststreams,            true,      false,      false },
     { "blockchain",         "listupgrades",           &listupgrades,           true,      false,      false },
     { "blockchain",         "listblocks",             &listblocks,             true,      false,      false },
+
+    // MYJOB : what is okSafeMode, threadSafe and reqWallet
+    { "blockchain",         "getspentinfo",           &getspentinfo,           false,     false,      false },
     
     /* Mining */
     { "mining",             "getblocktemplate",       &getblocktemplate,       true,      false,      false },
@@ -117,10 +120,9 @@ static const CRPCCommand vRPCCommands[] =
     { "hidden",             "appendrawmetadata",      &appendrawmetadata,      false,     false,      true },
     { "rawtransactions",    "appendrawdata",          &appendrawmetadata,      false,     false,      true },
 
-    // MYJOB : implement
     /* Address index */
     { "addressindex",       "getaddressmempool",      &getaddressmempool,      true,      false,      false  },
-    //{ "addressindex",       "getaddressutxos",        &getaddressutxos,        false,     false,      false  },
+    { "addressindex",       "getaddressutxos",        &getaddressutxos,        false,     false,      false  },
     { "addressindex",       "getaddressdeltas",       &getaddressdeltas,       false,     false,      false  },
     { "addressindex",       "getaddresstxids",        &getaddresstxids,        false,     false,      false  },
     { "addressindex",       "getaddressbalance",      &getaddressbalance,      false,     false,      false  },

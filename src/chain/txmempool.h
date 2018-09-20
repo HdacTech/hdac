@@ -19,6 +19,7 @@
 #include "hdac/hdac.h"
 
 #include "chain/addressindex.h"
+#include "chain/spentindex.h"
 
 class CAutoFile;
 
@@ -128,12 +129,11 @@ private:
     typedef std::map<uint256, std::vector<CMempoolAddressDeltaKey> > addressDeltaMapInserted;
     addressDeltaMapInserted mapAddressInserted;
 
-    // MYJOB : implement
-//    typedef std::map<CSpentIndexKey, CSpentIndexValue, CSpentIndexKeyCompare> mapSpentIndex;
-//    mapSpentIndex mapSpent;
+    typedef std::map<CSpentIndexKey, CSpentIndexValue, CSpentIndexKeyCompare> mapSpentIndex;
+    mapSpentIndex mapSpent;
 
-//    typedef std::map<uint256, std::vector<CSpentIndexKey> > mapSpentIndexInserted;
-//    mapSpentIndexInserted mapSpentInserted;
+    typedef std::map<uint256, std::vector<CSpentIndexKey> > mapSpentIndexInserted;
+    mapSpentIndexInserted mapSpentInserted;
 
 public:
     CTxMemPool(const CFeeRate& _minRelayFee);
@@ -154,6 +154,11 @@ public:
     bool getAddressIndex(std::vector<std::pair<uint160, int> > &addresses,
                          std::vector<std::pair<CMempoolAddressDeltaKey, CMempoolAddressDelta> > &results);
     bool removeAddressIndex(const uint256 txhash);
+
+    // MYJOB : implement
+    void addSpentIndex(const CTxMemPoolEntry &entry, const CCoinsViewCache &view);
+    bool getSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value);
+    bool removeSpentIndex(const uint256 txhash);
 
     void remove(const CTransaction &tx, std::list<CTransaction>& removed, bool fRecursive = false, std::string wtx_reason="");
     void removeCoinbaseSpends(const CCoinsViewCache *pcoins, unsigned int nMemPoolHeight);

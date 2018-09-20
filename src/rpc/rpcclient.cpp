@@ -267,12 +267,13 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "estimatepriority", 0 },
     { "prioritisetransaction", 1 },
     { "prioritisetransaction", 2 },
-    // MYJOB : implement
+
     { "getaddressmempool", 0 },
-    //{"getaddressutxos",  1 },
+    { "getaddressutxos",  0 },
     { "getaddressdeltas", 0 },
     { "getaddresstxids", 0 },
     { "getaddressbalance", 0 },
+    { "getspentinfo", 0 },
 };
 
 class CRPCConvertTable
@@ -297,9 +298,9 @@ CRPCConvertTable::CRPCConvertTable()
         members.insert(std::make_pair(vRPCConvertParams[i].methodName,
                                       vRPCConvertParams[i].paramIdx));
     }
-    for (std::set<std::pair<std::string, int> >::iterator i = members.begin(); i != members.end(); i++) {
-        std::cout << i->first << ", " << i->second << std::endl;
-    }
+//    for (std::set<std::pair<std::string, int> >::iterator i = members.begin(); i != members.end(); i++) {
+//        std::cout << i->first << ", " << i->second << std::endl;
+//    }
 }
 
 static CRPCConvertTable rpcCvtTable;
