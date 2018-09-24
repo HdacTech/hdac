@@ -17,7 +17,6 @@
 # 20180524 - fixed GetNetworkHashPS()
 # 20180608 - fixed encryptwallet ( issue of block sync. )
 # 20180615 - fixed LOCK problem ( critical section range ) - ProcessNewBlock()
-# 20180924 - fixed issue of block signer
 
 ----------------
 # - ver:1.05.0
@@ -26,4 +25,6 @@
 # 20180710 - changed Difficulty adjustment Algorithm ( per 480 block --> every blcok )
 # 20180720 - optimized parameters for epow and pow
 
-
+----------------
+# - ver:1.06.0
+# 20180924 - fixed issue of block signer
