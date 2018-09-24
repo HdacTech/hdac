@@ -137,7 +137,7 @@ bool CreateBlockSignature(CBlock *block,uint32_t hash_type,CWallet *pwallet)
                 for (unsigned int j = 0; j < tx.vout.size(); j++)
                 {
 
-                    const CScript& script1 = tx.vout[j].scriptPubKey;        
+                    const CScript& script1 = tx.vout[j].scriptPubKey;
                     if(script1.IsUnspendable())
                     {
                         op_return_output=j;                        

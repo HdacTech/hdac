@@ -16,7 +16,8 @@
 # 20180518 - Fixed error in status display of runtime parameter " -gen " 
 # 20180524 - fixed GetNetworkHashPS()
 # 20180608 - fixed encryptwallet ( issue of block sync. )
-# 20160615 - fixed LOCK problem ( critical section range ) - ProcessNewBlock()
+# 20180615 - fixed LOCK problem ( critical section range ) - ProcessNewBlock()
+# 20180924 - fixed issue of block signer
 
 ----------------
 # - ver:1.05.0

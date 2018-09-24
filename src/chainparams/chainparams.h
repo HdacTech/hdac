@@ -90,6 +90,8 @@ public:
     #if 1
     int GetStartHeightDiffAlg() const { return nStartHeightDiffAlg; }
     int GetStartHeightEpowV2() const { return nStartHeightEpowV2; }
+
+    int GetStartHeightChBlockSigner() const { return nStartHeightChBlockSigner; }
     #endif
     
 protected:
@@ -131,6 +133,8 @@ protected:
     int nStartHeightDiffAlg;
     // Block height at which the expanded epow becomes active
     int nStartHeightEpowV2;
+    // Block height at which the check-block-signer is active
+    int nStartHeightChBlockSigner;
     #endif
 };
 
