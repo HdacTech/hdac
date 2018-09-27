@@ -93,6 +93,9 @@ static const CRPCCommand vRPCCommands[] =
 
     // MYJOB : what is okSafeMode, threadSafe and reqWallet
     { "blockchain",         "getspentinfo",           &getspentinfo,           false,     false,      false },
+
+    // MYTASK : what is okSafeMode, threadSafe and reqWallet, so it set all false.
+    { "blockchain",         "getblockdeltas",         &getblockdeltas,        false,	  false,      false },
     
     /* Mining */
     { "mining",             "getblocktemplate",       &getblocktemplate,       true,      false,      false },
