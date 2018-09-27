@@ -2200,6 +2200,8 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
             return AbortNode(state, "Failed to write address unspent index");
         }
     }
+
+	return fClean;
 }
 
 void static FlushBlockFile(bool fFinalize = false)
