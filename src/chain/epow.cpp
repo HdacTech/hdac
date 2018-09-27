@@ -778,6 +778,9 @@ int CalculateWindowSize(int nDepth)
 
     CBlockIndex* pindexTip = chainActive.Tip();
     int nSetRefBlock = nDepth;
+
+    assert(pindexTip->nHeight >= (Params().Interval()/4));
+    
     int nSetRefBlocknext = (nSetRefBlock/2);
     CBlockIndex* pindexRef = pindexTip->GetAncestor(pindexTip->nHeight - nSetRefBlock);
     int nRefBlkTime = (pindexTip->GetBlockTime() - pindexRef->GetBlockTime());
