@@ -306,6 +306,68 @@ bool CBlockTreeDB::ReadAddressIndex(uint160 addressHash, int type, std::vector<s
     return true;
 }
 
+bool CBlockTreeDB::WriteTimestampIndex(const CTimestampIndexKey &timestampIndex)
+{
+    CLevelDBBatch batch;
+    batch.Write(make_pair('S', timestampIndex), 0);
+    return WriteBatch(batch);
+}
+
+bool CBlockTreeDB::ReadTimestampIndex(const unsigned int &high, const unsigned int &low, const bool fActiveOnly, std::vector<std::pair<uint256, unsigned int> > &hashes)
+{
+    boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
+
+    CDataStream ssKeySet(SER_DISK, CLIENT_VERSION);
+    ssKeySet << make_pair('S', CTimestampIndexIteratorKey(low));
+    pcursor->Seek(ssKeySet.str());
+
+    while (pcursor->Valid()) {
+        boost::this_thread::interruption_point();
+        try {
+            leveldb::Slice slKey = pcursor->key();
+            CDataStream ssKey(slKey.data(), slKey.data()+slKey.size(), SER_DISK, CLIENT_VERSION);
+            char chType;
+            CTimestampIndexKey indexKey;
+            ssKey >> chType;
+            ssKey >> indexKey;
+            if (chType == 'S' && indexKey.timestamp < high) {
+                if (fActiveOnly) {
+                    if (blockOnchainActive(indexKey.blockHash)) {
+                        hashes.push_back(std::make_pair(indexKey.blockHash, indexKey.timestamp));
+                    }
+                } else {
+                    hashes.push_back(std::make_pair(indexKey.blockHash, indexKey.timestamp));
+                }
+
+                pcursor->Next();
+            } else {
+                break;
+            }
+        } catch (const std::exception& e) {
+            break;
+        }
+    }
+
+    return true;
+}
+
+bool CBlockTreeDB::WriteTimestampBlockIndex(const CTimestampBlockIndexKey &blockhashIndex, const CTimestampBlockIndexValue &logicalts)
+{
+    CLevelDBBatch batch;
+    batch.Write(make_pair('z', blockhashIndex), logicalts);
+    return WriteBatch(batch);
+}
+
+bool CBlockTreeDB::ReadTimestampBlockIndex(const uint256 &hash, unsigned int &ltimestamp)
+{
+    CTimestampBlockIndexValue(lts);
+    if (!Read(std::make_pair('z', hash), lts))
+        return false;
+
+    ltimestamp = lts.ltimestamp;
+    return true;
+}
+
 bool CBlockTreeDB::WriteFlag(const std::string &name, bool fValue) {
     return Write(std::make_pair('F', name), fValue ? '1' : '0');
 }
@@ -315,6 +377,17 @@ bool CBlockTreeDB::ReadFlag(const std::string &name, bool &fValue) {
     if (!Read(std::make_pair('F', name), ch))
         return false;
     fValue = ch == '1';
+    return true;
+}
+
+bool CBlockTreeDB::blockOnchainActive(const uint256 &hash)
+{
+    CBlockIndex* pblockindex = mapBlockIndex[hash];
+
+    if (!chainActive.Contains(pblockindex)) {
+    return false;
+    }
+
     return true;
 }
 
@@ -370,3 +443,5 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
 
     return true;
 }
+
+
