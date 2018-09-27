@@ -148,7 +148,118 @@ Object blockToJSONForListBlocks(const CBlock& block, const CBlockIndex* blockind
     return result;
 }
 
+Value blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
+{
+//    UniValue result(UniValue::VOBJ);
+    Object result;
+    result.push_back(Pair("hash", block.GetHash().GetHex()));
+    int confirmations = -1;
+    // Only report confirmations if the block is on the main chain
+    if (chainActive.Contains(blockindex)) {
+        confirmations = chainActive.Height() - blockindex->nHeight + 1;
+    } else {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block is an orphan");
+    }
+    result.push_back(Pair("confirmations", confirmations));
+    result.push_back(Pair("size", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION)));
+    result.push_back(Pair("height", blockindex->nHeight));
+    result.push_back(Pair("version", block.nVersion));
+    result.push_back(Pair("merkleroot", block.hashMerkleRoot.GetHex()));
 
+//    UniValue deltas(UniValue::VARR);
+    Array deltas;
+
+    for (unsigned int i = 0; i < block.vtx.size(); i++) {
+        const CTransaction &tx = block.vtx[i];
+        const uint256 txhash = tx.GetHash();
+
+//        UniValue entry(UniValue::VOBJ);
+	Object entry;
+        entry.push_back(Pair("txid", txhash.GetHex()));
+        entry.push_back(Pair("index", (int)i));
+
+//        UniValue inputs(UniValue::VARR);
+	Array inputs;	
+
+        if (!tx.IsCoinBase()) {
+
+            for (size_t j = 0; j < tx.vin.size(); j++) {
+                const CTxIn input = tx.vin[j];
+
+//                UniValue delta(UniValue::VOBJ);
+		Object delta;		
+
+                CSpentIndexValue spentInfo;
+                CSpentIndexKey spentKey(input.prevout.hash, input.prevout.n);
+
+                if (GetSpentIndex(spentKey, spentInfo)) {
+                    if (spentInfo.addressType == 1) {
+                        delta.push_back(Pair("address", CBitcoinAddress(CKeyID(spentInfo.addressHash)).ToString()));
+                    } else if (spentInfo.addressType == 2)  {
+                        delta.push_back(Pair("address", CBitcoinAddress(CScriptID(spentInfo.addressHash)).ToString()));
+                    } else {
+                        continue;
+                    }
+                   delta.push_back(Pair("satoshis", -1 * spentInfo.satoshis));
+                    delta.push_back(Pair("index", (int)j));
+                    delta.push_back(Pair("prevtxid", input.prevout.hash.GetHex()));
+                    delta.push_back(Pair("prevout", (int)input.prevout.n));
+
+                    inputs.push_back(delta);
+                } else {
+                    throw JSONRPCError(RPC_INTERNAL_ERROR, "Spent information not available");
+                }
+
+            }
+        }
+
+        entry.push_back(Pair("inputs", inputs));
+
+//        UniValue outputs(UniValue::VARR);
+	Array outputs;
+
+        for (unsigned int k = 0; k < tx.vout.size(); k++) {
+            const CTxOut &out = tx.vout[k];
+
+//            UniValue delta(UniValue::VOBJ);
+	    Object delta;	    
+
+            if (out.scriptPubKey.IsPayToScriptHash()) {
+                vector<unsigned char> hashBytes(out.scriptPubKey.begin()+2, out.scriptPubKey.begin()+22);
+                delta.push_back(Pair("address", CBitcoinAddress(CScriptID(uint160(hashBytes))).ToString()));
+
+            } else if (out.scriptPubKey.IsPayToPublicKeyHash()) {
+                vector<unsigned char> hashBytes(out.scriptPubKey.begin()+3, out.scriptPubKey.begin()+23);
+                delta.push_back(Pair("address", CBitcoinAddress(CKeyID(uint160(hashBytes))).ToString()));
+            } else {
+                continue;
+            }
+
+            delta.push_back(Pair("satoshis", out.nValue));
+            delta.push_back(Pair("index", (int)k));
+
+            outputs.push_back(delta);
+        }
+
+        entry.push_back(Pair("outputs", outputs));
+        deltas.push_back(entry);
+
+    }
+    result.push_back(Pair("deltas", deltas));
+    result.push_back(Pair("time", block.GetBlockTime()));
+    result.push_back(Pair("mediantime", (int64_t)blockindex->GetMedianTimePast()));
+    result.push_back(Pair("nonce",strprintf("%08x", block.nNonce)));
+    result.push_back(Pair("bits", strprintf("%08x", block.nBits)));
+    result.push_back(Pair("difficulty", GetDifficulty(blockindex)));
+    result.push_back(Pair("chainwork", blockindex->nChainWork.GetHex()));
+
+    if (blockindex->pprev)
+        result.push_back(Pair("previousblockhash", blockindex->pprev->GetBlockHash().GetHex()));
+    CBlockIndex *pnext = chainActive.Next(blockindex);
+    if (pnext)
+        result.push_back(Pair("nextblockhash", pnext->GetBlockHash().GetHex()));
+    return result;
+}
 
 Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails = false, int verbose_level = 1)
 {
@@ -299,6 +410,67 @@ Value getrawmempool(const Array& params, bool fHelp)
 
         return a;
     }
+}
+
+Value getblockdeltas(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "getblockdeltas\n"
+            "\nReturns all changes for an block.\n"
+            "\nArguments:\n"
+            "{\n"
+            "  \"hash\"\n"
+            "    [\n"
+            "      \"hash\"  (string) The block hash\n"
+            "      ,...\n"
+            "    ]\n"
+            "}\n"
+            "\nResult:\n"
+            "[\n"
+            "  {\n"
+            "    \"hash\"  (string) The block hash\n"
+            "    \"confirmations\"  (number) The number of comfirmations\n"
+            "    \"size\"  (number) The size of block\n"
+            "    \"height\"  (number) The block height\n"
+            "    \"version\"  (number) The block chain version\n"
+            "    \"merkleroot\"  (string) The block merkle tree\n"
+            "    \"deltas\"  (string) The transactions in block\n"
+            "    \"time\"  (number) The unix time\n"
+            "    \"mediantime\"  (number) The mediantime\n"
+            "    \"nonce\"  (string) The block nonce value\n"
+            "    \"bits\"  (string) The block bits\n"
+            "    \"difficulty\"  (string) The block difficulty\n"
+            "    \"chainwork\"  (string) The block chainwork\n"
+            "    \"previousblockhash\"  (string) The previous block hash\n"
+            "    \"nextblockhash\"  (string) The next block hash\n"
+            "  }\n"
+            "]\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getblockdeltas", "'{\"hash\": [\"ee7af6dd4969a2c3c5ae525d29a926212e240bde26c4f54de16cf8bfeedb6a2d\"]}'")
+            + HelpExampleRpc("getblockdeltas", "{\"hash\": [\"ee7af6dd4969a2c3c5ae525d29a926212e240bde26c4f54de16cf8bfeedb6a2d\"]}")
+        );
+
+//    std::string strHash = params[0].get_str();
+    Object oparam = params[0].get_obj();
+    const Value &blockHash = find_value(oparam, "hash");
+    std::string strHash = blockHash.get_str();
+    uint256 hash(strHash);
+
+    if (mapBlockIndex.count(hash) == 0)
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
+
+    CBlock block;
+    CBlockIndex* pblockindex = mapBlockIndex[hash];
+	
+	// Not yet coding fHavePruned value
+//   if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
+//       throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
+
+    if(!ReadBlockFromDisk(block, pblockindex))
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
+
+    return blockToDeltasJSON(block, pblockindex);
 }
 
 Value getblockhash(const Array& params, bool fHelp)
