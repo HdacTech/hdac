@@ -4034,6 +4034,50 @@ bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bo
     return true;
 }
 
+bool CheckBlockSigner(const CBlock& block, CNode* pfrom)
+{
+    do
+    {
+        if(chainActive.Tip() == NULL)break;
+        if(chainActive.Tip()->nHeight <= Params().GetStartHeightChBlockSigner())break;
+        if(!block.vtx[0].IsCoinBase())break;
+
+        txnouttype type;
+        vector<CTxDestination> addresses;
+        int nRequired;
+        const CTransaction& tx = block.vtx[0];
+        
+        if (!ExtractDestinations(tx.vout[0].scriptPubKey, type, addresses, nRequired)) {
+            if(fDebug>1)LogPrintf("CheckBlockSigner() : NOT FOUND coinbase address\n");
+            return false;
+        }
+        
+        std::vector<unsigned char> vchPubKey;
+        vchPubKey=std::vector<unsigned char> (block.vSigner+1, block.vSigner+1+block.vSigner[0]);
+        CPubKey pubKeyOut(vchPubKey);
+        
+        if(CBitcoinAddress(pubKeyOut.GetID()) == CBitcoinAddress(addresses[0]))
+        {
+            break;
+        }
+        else
+        {
+            if(fDebug>0)
+            {
+                LogPrintf("Invalid Block --> From %s\n", pfrom == NULL ? "ME":">>>"+pfrom->addr.ToString());
+            }
+            if(fDebug>1)LogPrintf("Mismatched!! Miner[%s], Coinbase[%s]\n", 
+                                       CBitcoinAddress(pubKeyOut.GetID()).ToString(),
+                                       CBitcoinAddress(addresses[0]).ToString());
+
+            return false;
+        }
+        
+    }while(0);
+    
+    return true;
+}
+
 bool CheckBranchForInvalidBlocks(CBlockIndex * const pindexPrev)
 {
     if(pindexPrev == NULL)
@@ -4455,6 +4499,11 @@ bool ProcessNewBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDis
          	state.DoS(100, error("VerifyBlockSignature() : block signature mismatch"),
         	                             REJECT_INVALID, "block-signature-mismatch", true); // HDAC
         	return error("%s : VerifyBlockSignature FAILED", __func__); // HDAC
+        }
+
+        if(!CheckBlockSigner(*pblock, pfrom))
+        {
+        	return error("%s : CheckBlockSigner FAILED", __func__);
         }
     }
     
