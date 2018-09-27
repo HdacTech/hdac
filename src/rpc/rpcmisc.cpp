@@ -1232,6 +1232,103 @@ Value getaddressmempool(const Array& params, bool fHelp)
     return result;
 }
 
+bool heightSort(std::pair<CAddressUnspentKey, CAddressUnspentValue> a,
+                std::pair<CAddressUnspentKey, CAddressUnspentValue> b) {
+    return a.second.blockHeight < b.second.blockHeight;
+}
+
+//UniValue getaddressutxos(const UniValue& params, bool fHelp)
+Value getaddressutxos(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "getaddressutxos\n"
+            "\nReturns all unspent outputs for an address (requires addressindex to be enabled).\n"
+            "\nArguments:\n"
+            "{\n"
+            "  \"addresses\"\n"
+            "    [\n"
+            "      \"address\"  (string) The base58check encoded address\n"
+            "      ,...\n"
+            "    ],\n"
+            "  \"chainInfo\"  (boolean) Include chain info with results\n"
+            "}\n"
+            "\nResult\n"
+            "[\n"
+            "  {\n"
+            "    \"address\"  (string) The address base58check encoded\n"
+            "    \"txid\"  (string) The output txid\n"
+            "    \"height\"  (number) The block height\n"
+            "    \"outputIndex\"  (number) The output index\n"
+            "    \"script\"  (strin) The script hex encoded\n"
+            "    \"satoshis\"  (number) The number of satoshis of the output\n"
+            "  }\n"
+            "]\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getaddressutxos", "'{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}'")
+            + HelpExampleRpc("getaddressutxos", "{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}")
+            );
+
+    bool includeChainInfo = false;
+    //if (params[0].isObject()) {
+    if (params[0].type() == obj_type) {
+        //UniValue chainInfo = find_value(params[0].get_obj(), "chainInfo");
+        const Value& chainInfo = find_value(params[0].get_obj(), "chainInfo");
+        //if (chainInfo.isBool()) {
+        if (chainInfo.type() == bool_type) {
+            includeChainInfo = chainInfo.get_bool();
+        }
+    }
+
+    std::vector<std::pair<uint160, int> > addresses;
+
+    if (!getAddressesFromParams(params, addresses)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
+    }
+
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+
+    for (std::vector<std::pair<uint160, int> >::iterator it = addresses.begin(); it != addresses.end(); it++) {
+        if (!GetAddressUnspent((*it).first, (*it).second, unspentOutputs)) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available for address");
+        }
+    }
+
+    std::sort(unspentOutputs.begin(), unspentOutputs.end(), heightSort);
+
+    Array utxos;
+
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++) {
+        //UniValue output(UniValue::VOBJ);
+        Object output;
+        std::string address;
+        if (!getAddressFromIndex(it->first.type, it->first.hashBytes, address)) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Unknown address type");
+        }
+
+        output.push_back(Pair("address", address));
+        output.push_back(Pair("txid", it->first.txhash.GetHex()));
+        output.push_back(Pair("outputIndex", (int)it->first.index));
+        output.push_back(Pair("script", HexStr(it->second.script.begin(), it->second.script.end())));
+        output.push_back(Pair("satoshis", it->second.satoshis));
+        output.push_back(Pair("height", it->second.blockHeight));
+        utxos.push_back(output);
+    }
+
+    if (includeChainInfo) {
+        //UniValue result(UniValue::VOBJ);
+        Object result;
+        result.push_back(Pair("utxos", utxos));
+
+        LOCK(cs_main);
+        result.push_back(Pair("hash", chainActive.Tip()->GetBlockHash().GetHex()));
+        result.push_back(Pair("height", (int)chainActive.Height()));
+        return result;
+    } else {
+        return utxos;
+    }
+}
+
 Value getaddressdeltas(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
@@ -1522,4 +1619,56 @@ Value getaddresstxids(const Array& params, bool fHelp)
 
     return result;
 
+}
+
+Value getspentinfo(const Array& params, bool fHelp)
+{
+
+    if (fHelp || params.size() != 1 || !(params[0].type() == obj_type))
+        throw runtime_error(
+            "getspentinfo\n"
+            "\nReturns the txid and index where an output is spent.\n"
+            "\nArguments:\n"
+            "{\n"
+            "  \"txid\" (string) The hex string of the txid\n"
+            "  \"index\" (number) The start block height\n"
+            "}\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"txid\"  (string) The transaction id\n"
+            "  \"index\"  (number) The spending input index\n"
+            "  ,...\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getspentinfo", "'{\"txid\": \"0437cd7f8525ceed2324359c2d0ba26006d92d856a9c20fa0241106ee5a597c9\", \"index\": 0}'")
+            + HelpExampleRpc("getspentinfo", "{\"txid\": \"0437cd7f8525ceed2324359c2d0ba26006d92d856a9c20fa0241106ee5a597c9\", \"index\": 0}")
+        );
+
+    //UniValue txidValue = find_value(params[0].get_obj(), "txid");
+    //UniValue indexValue = find_value(params[0].get_obj(), "index");
+    const Value& txidValue = find_value(params[0].get_obj(), "txid");
+    const Value& indexValue = find_value(params[0].get_obj(), "index");
+
+    //if (!txidValue.isStr() || !indexValue.isNum()) {
+    if (!(txidValue.type() == str_type) || !(indexValue.type() == int_type)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid txid or index");
+    }
+
+    uint256 txid = ParseHashV(txidValue, "txid");
+    int outputIndex = indexValue.get_int();
+
+    CSpentIndexKey key(txid, outputIndex);
+    CSpentIndexValue value;
+
+    if (!GetSpentIndex(key, value)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Unable to get spent info");
+    }
+
+    //UniValue obj(UniValue::VOBJ);
+    Object obj;
+    obj.push_back(Pair("txid", value.txid.GetHex()));
+    obj.push_back(Pair("index", (int)value.inputIndex));
+    obj.push_back(Pair("height", value.blockHeight));
+
+    return obj;
 }
