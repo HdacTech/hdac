@@ -419,13 +419,7 @@ Value getblockdeltas(const Array& params, bool fHelp)
             "getblockdeltas\n"
             "\nReturns all changes for an block.\n"
             "\nArguments:\n"
-            "{\n"
-            "  \"hash\"\n"
-            "    [\n"
-            "      \"hash\"  (string) The block hash\n"
-            "      ,...\n"
-            "    ]\n"
-            "}\n"
+            "1. \"hash\"  (string) The block hash\n"
             "\nResult:\n"
             "[\n"
             "  {\n"
@@ -447,14 +441,11 @@ Value getblockdeltas(const Array& params, bool fHelp)
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getblockdeltas", "'{\"hash\": \"ee7af6dd4969a2c3c5ae525d29a926212e240bde26c4f54de16cf8bfeedb6a2d\"}'")
-            + HelpExampleRpc("getblockdeltas", "{\"hash\": \"ee7af6dd4969a2c3c5ae525d29a926212e240bde26c4f54de16cf8bfeedb6a2d\"}")
+            + HelpExampleCli("getblockdeltas", "\"ee7af6dd4969a2c3c5ae525d29a926212e240bde26c4f54de16cf8bfeedb6a2d\"")
+            + HelpExampleRpc("getblockdeltas", "\"ee7af6dd4969a2c3c5ae525d29a926212e240bde26c4f54de16cf8bfeedb6a2d\"")
         );
 
-//    std::string strHash = params[0].get_str();
-    Object oparam = params[0].get_obj();
-    const Value &blockHash = find_value(oparam, "hash");
-    std::string strHash = blockHash.get_str();
+    std::string strHash = params[0].get_str();
     uint256 hash(strHash);
 
     if (mapBlockIndex.count(hash) == 0)
