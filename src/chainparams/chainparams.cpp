@@ -578,6 +578,9 @@ public:
         // [hard fork] expected date2018/08/01 ~ 
         nStartHeightDiffAlg = 112400;
         nStartHeightEpowV2 =  112400;
+
+        // [hard fork] expected date 2018/09/24 ~ 
+        nStartHeightChBlockSigner = 138700;//<<<<<
         #endif
     }
     

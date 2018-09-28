@@ -276,6 +276,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "getspentinfo", 0 },
     { "getblockhashes", 0 },
     { "getblockhashes", 1 },
+    { "getblockdeltas", 0},
 };
 
 class CRPCConvertTable
