@@ -447,8 +447,8 @@ Value getblockdeltas(const Array& params, bool fHelp)
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getblockdeltas", "'{\"hash\": [\"ee7af6dd4969a2c3c5ae525d29a926212e240bde26c4f54de16cf8bfeedb6a2d\"]}'")
-            + HelpExampleRpc("getblockdeltas", "{\"hash\": [\"ee7af6dd4969a2c3c5ae525d29a926212e240bde26c4f54de16cf8bfeedb6a2d\"]}")
+            + HelpExampleCli("getblockdeltas", "'{\"hash\": \"ee7af6dd4969a2c3c5ae525d29a926212e240bde26c4f54de16cf8bfeedb6a2d\"}'")
+            + HelpExampleRpc("getblockdeltas", "{\"hash\": \"ee7af6dd4969a2c3c5ae525d29a926212e240bde26c4f54de16cf8bfeedb6a2d\"}")
         );
 
 //    std::string strHash = params[0].get_str();
