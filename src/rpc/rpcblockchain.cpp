@@ -412,6 +412,87 @@ Value getrawmempool(const Array& params, bool fHelp)
     }
 }
 
+//UniValue getblockhashes(const UniValue& params, bool fHelp)
+Value getblockhashes(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 2)
+        throw runtime_error(
+            "getblockhashes timestamp\n"
+            "\nReturns array of hashes of blocks within the timestamp range provided.\n"
+            "\nArguments:\n"
+            "1. high         (numeric, required) The newer block timestamp\n"
+            "2. low          (numeric, required) The older block timestamp\n"
+            "3. options      (string, required) A json object\n"
+            "    {\n"
+            "      \"noOrphans\":true   (boolean) will only include blocks on the main chain\n"
+            "      \"logicalTimes\":true   (boolean) will include logical timestamps with hashes\n"
+            "    }\n"
+            "\nResult:\n"
+            "[\n"
+            "  \"hash\"         (string) The block hash\n"
+            "]\n"
+            "[\n"
+            "  {\n"
+            "    \"blockhash\": (string) The block hash\n"
+            "    \"logicalts\": (numeric) The logical timestamp\n"
+            "  }\n"
+            "]\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getblockhashes", "1231614698 1231024505")
+            + HelpExampleRpc("getblockhashes", "1231614698, 1231024505")
+            + HelpExampleCli("getblockhashes", "1231614698 1231024505 '{\"noOrphans\":false, \"logicalTimes\":true}'")
+            );
+
+    unsigned int high = params[0].get_int();
+    unsigned int low = params[1].get_int();
+    bool fActiveOnly = false;
+    bool fLogicalTS = false;
+
+    if (params.size() > 2) {
+        //if (params[2].isObject()) {
+        if (params[2].type() == obj_type) {
+            //UniValue noOrphans = find_value(params[2].get_obj(), "noOrphans");
+            //UniValue returnLogical = find_value(params[2].get_obj(), "logicalTimes");
+            Value noOrphans = find_value(params[2].get_obj(), "noOrphans");
+            Value returnLogical = find_value(params[2].get_obj(), "logicalTimes");
+
+            //if (noOrphans.isBool())
+            if (noOrphans.type() == bool_type)
+                fActiveOnly = noOrphans.get_bool();
+
+            //if (returnLogical.isBool())
+            if (returnLogical.type() == bool_type)
+                fLogicalTS = returnLogical.get_bool();
+        }
+    }
+
+    std::vector<std::pair<uint256, unsigned int> > blockHashes;
+
+    if (fActiveOnly)
+        LOCK(cs_main);
+
+    if (!GetTimestampIndex(high, low, fActiveOnly, blockHashes)) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available for block hashes");
+    }
+
+    //UniValue result(UniValue::VARR);
+    Array result;
+
+    for (std::vector<std::pair<uint256, unsigned int> >::const_iterator it=blockHashes.begin(); it!=blockHashes.end(); it++) {
+        if (fLogicalTS) {
+            //UniValue item(UniValue::VOBJ);
+            Object item;
+            item.push_back(Pair("blockhash", it->first.GetHex()));
+            item.push_back(Pair("logicalts", (int)it->second));
+            result.push_back(item);
+        } else {
+            result.push_back(it->first.GetHex());
+        }
+    }
+
+    return result;
+}
+
 Value getblockdeltas(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
