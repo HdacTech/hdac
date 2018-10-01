@@ -89,7 +89,9 @@ bool RTTRoot::handleEtcMenu(int index) {
         return false;
     }
     if (index == 'E' - 'A') {
-        changeCurrentTest(mParent);
+        if (mParent)    {
+            changeCurrentTest(mParent);
+        }
     }
     return true;
 }
