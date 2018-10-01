@@ -32,6 +32,7 @@ LIBBITCOIN_HDAC=hdac/libbitcoin_hdac.a
 LIBBITCOIN_UNIVALUE=univalue/libbitcoin_univalue.a
 LIBBITCOINQT=qt/libbitcoinqt.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
+LIBBITCOIN_RTT=libbitcoin_rtt.a
 
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
@@ -348,6 +349,14 @@ libbitcoin_cli_a_SOURCES = \
 
 nodist_libbitcoin_util_a_SOURCES = $(srcdir)/obj/build.h
 
+noinst_LIBRARIES = $(LIBBITCOIN_RTT)
+libbitcoin_rtt_a_CPPFLAGS = $(BITCOIN_INCLUDES)
+libbitcoin_rtt_a_SOURCES = \
+  runtimetest/rttmain.cpp \
+  runtimetest/rttroot.cpp \
+  runtimetest/blocktreedbrtt.cpp \
+  $(BITCOIN_CORE_H)
+
 #---------------------------------------------------------------------------
 
 
@@ -359,10 +368,12 @@ hdacd_LDADD = \
   $(LIBBITCOIN_WALLET) \
   $(LIBBITCOIN_HDAC) \
   $(LIBBITCOIN_UTIL) \
+  $(LIBBITCOIN_RTT) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBLEVELDB) \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
+  
 
 hdacd_SOURCES = hdac/hdacd.cpp rpc/rpclist.cpp chainparams/buildgenesis.cpp
 

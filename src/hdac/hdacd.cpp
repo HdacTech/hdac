@@ -12,6 +12,7 @@
 #include "ui/noui.h"
 #include "ui/ui_interface.h"
 #include "utils/util.h"
+#include "runtimetest/rttmain.h"
 
 
 #include <boost/algorithm/string/predicate.hpp>
@@ -347,6 +348,13 @@ bool AppInit(int argc, char* argv[])
             
     SelectHdacParams(mc_gState->m_Params->NetworkName());
 
+    if(GetBoolArg("-runtimetest", false))
+    {
+        fprintf(stdout, "Entering runtime test mode...\n\n");
+        threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "runtimetest", &doRunTimeTest));
+        //doRunTimeTest();
+    }
+
     try
     {
         SoftSetBoolArg("-server", true);
@@ -373,6 +381,13 @@ bool AppInit(int argc, char* argv[])
         // the startup-failure cases to make sure they don't result in a hang due to some
         // thread-blocking-waiting-for-another-thread-during-startup case
     }
+
+//    if(GetBoolArg("-runtimetest", false))
+//    {
+//        fprintf(stdout, "Entering runtime test mode...\n\n");
+//        doRunTimeTest();
+//    }
+
     if (detectShutdownThread)
     {
         detectShutdownThread->join();
