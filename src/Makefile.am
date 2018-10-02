@@ -355,6 +355,7 @@ libbitcoin_rtt_a_SOURCES = \
   runtimetest/rttmain.cpp \
   runtimetest/rttroot.cpp \
   runtimetest/blocktreedbrtt.cpp \
+  runtimetest/epowrtt.cpp \
   $(BITCOIN_CORE_H)
 
 #---------------------------------------------------------------------------
