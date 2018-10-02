@@ -1178,7 +1178,7 @@ Value getaddressmempool(const Array& params, bool fHelp)
             "    \"address\"  (string) The base58check encoded address\n"
             "    \"txid\"  (string) The related txid\n"
             "    \"index\"  (number) The related input or output index\n"
-            "    \"satoshis\"  (number) The difference of satoshis\n"
+            "    \"qty\"  (number) The difference of dac\n"
             "    \"timestamp\"  (number) The time the transaction entered the mempool (seconds)\n"
             "    \"prevtxid\"  (string) The previous txid (if spending)\n"
             "    \"prevout\"  (string) The previous transaction output index (if spending)\n"
@@ -1220,7 +1220,8 @@ Value getaddressmempool(const Array& params, bool fHelp)
         delta.push_back(Pair("address", address));
         delta.push_back(Pair("txid", it->first.txhash.GetHex()));
         delta.push_back(Pair("index", (int)it->first.index));
-        delta.push_back(Pair("satoshis", it->second.amount));
+        //delta.push_back(Pair("satoshis", it->second.amount));
+        delta.push_back(Pair("qty", ValueFromAmount(it->second.amount)));
         delta.push_back(Pair("timestamp", it->second.time));
         if (it->second.amount < 0) {
             delta.push_back(Pair("prevtxid", it->second.prevhash.GetHex()));
@@ -1261,7 +1262,7 @@ Value getaddressutxos(const Array& params, bool fHelp)
             "    \"height\"  (number) The block height\n"
             "    \"outputIndex\"  (number) The output index\n"
             "    \"script\"  (strin) The script hex encoded\n"
-            "    \"satoshis\"  (number) The number of satoshis of the output\n"
+            "    \"qty\"  (number) The number of dac of the output\n"
             "  }\n"
             "]\n"
             "\nExamples:\n"
@@ -1310,7 +1311,8 @@ Value getaddressutxos(const Array& params, bool fHelp)
         output.push_back(Pair("txid", it->first.txhash.GetHex()));
         output.push_back(Pair("outputIndex", (int)it->first.index));
         output.push_back(Pair("script", HexStr(it->second.script.begin(), it->second.script.end())));
-        output.push_back(Pair("satoshis", it->second.satoshis));
+        //output.push_back(Pair("satoshis", it->second.satoshis));
+        output.push_back(Pair("qty", ValueFromAmount(it->second.satoshis)));
         output.push_back(Pair("height", it->second.blockHeight));
         utxos.push_back(output);
     }
@@ -1349,7 +1351,7 @@ Value getaddressdeltas(const Array& params, bool fHelp)
             "\nResult:\n"
             "[\n"
             "  {\n"
-            "    \"satoshis\"  (number) The difference of satoshis\n"
+            "    \"qty\"  (number) The difference of dac\n"
             "    \"txid\"  (string) The related txid\n"
             "    \"index\"  (number) The related input or output index\n"
             "    \"height\"  (number) The block height\n"
@@ -1423,7 +1425,8 @@ Value getaddressdeltas(const Array& params, bool fHelp)
 
         //UniValue delta(UniValue::VOBJ);
         Object delta;
-        delta.push_back(Pair("satoshis", it->second));
+        //delta.push_back(Pair("satoshis", it->second));
+        delta.push_back(Pair("qty", ValueFromAmount(it->second)));
         delta.push_back(Pair("txid", it->first.txhash.GetHex()));
         delta.push_back(Pair("index", (int)it->first.index));
         delta.push_back(Pair("blockindex", (int)it->first.txindex));
@@ -1482,7 +1485,7 @@ Value getaddressbalance(const Array& params, bool fHelp)
             "}\n"
             "\nResult:\n"
             "{\n"
-            "  \"balance\"  (string) The current balance in satoshis\n"
+            "  \"qty\"  (string) The current balance in dac\n"
             "  \"received\"  (string) The total number of satoshis received (including change)\n"
             "}\n"
             "\nExamples:\n"
@@ -1517,8 +1520,8 @@ Value getaddressbalance(const Array& params, bool fHelp)
 
     //UniValue result(UniValue::VOBJ);
     Object result;
-    result.push_back(Pair("balance", balance));
-    result.push_back(Pair("received", received));
+    result.push_back(Pair("qty", ValueFromAmount(balance)));
+    result.push_back(Pair("received", ValueFromAmount(received)));
 
     return result;
 
