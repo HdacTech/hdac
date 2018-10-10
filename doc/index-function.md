@@ -21,7 +21,17 @@ hdac-cli hdac help <rpc call>
 으로 확인할 수 있습니다.
 
 -----------------------------------------------
-getaddressmempool : 지갑 주소에 대해 mempool 내의 잔액을 조회합니다.
+* getaddressmempool : 지갑 주소에 대해 mempool 내의 잔액을 조회합니다.
+* getaddressutxos : 지갑 주소에 대해 utxo를 조회합니다.
+* getaddressdeltas : 지갑 주소에 대해 잔액의 변동을 조회합니다.
+* getaddresstxids : 지갑 주소에 대해 txid를 조회합니다.
+* getaddressbalance : 지갑 주소에 대해 현재 잔액을 조회합니다.
+* getblockhashes : 설정한 시간 범위 내의 블럭 해시를 조회할 수 있습니다.
+* getspentinfo : txid로 지정한 거래에서 송금한 출력이 이후에 어떤 거래에서 사용되었는지를 조회할 수 있습니다.
+* getblockdeltas : 블록 내의 잔액 변동을 조회합니다.
+
+### rpc 명령 사용 방법
+#### getaddressmempool
 ```bash
 Returns all mempool deltas for an address (requires addressindex to be enabled).
 
@@ -50,7 +60,7 @@ Result:
 Example : hdac-cli hdac getaddressmempool '{"addresses": ["HDFd45jQ1e6khUwojLd8ndFWa6QJd5ntVz"]}'
 ```
 
-getaddressutxos : 지갑 주소에 대해 utxo를 조회합니다.
+#### getaddressutxos
 ```bash
 Returns all unspent outputs for an address (requires addressindex to be enabled).
 
@@ -78,8 +88,8 @@ Result
 
 Example : hdac-cli hdac getaddressutxos '{"addresses": ["HDFd45jQ1e6khUwojLd8ndFWa6QJd5ntVz"]}'
 ```
+#### getaddressdeltas
 
-getaddressdeltas : 지갑 주소에 대해 잔액의 변동을 조회합니다.
 ```bash
 Returns all changes for an address (requires addressindex to be enabled).
 
@@ -108,8 +118,8 @@ Result:
 
 Example : hdac-cli hdac getaddressdeltas '{"addresses": ["HDFd45jQ1e6khUwojLd8ndFWa6QJd5ntVz"]}'
 ```
+#### getaddresstxids
 
-getaddresstxids : 지갑 주소에 대해 txid를 조회합니다.
 ```bash
 Returns the txids for an address(es) (requires addressindex to be enabled).
 
@@ -132,8 +142,8 @@ Result:
 
 Example: hdac-cli hdac getaddresstxids '{"addresses": ["HDFd45jQ1e6khUwojLd8ndFWa6QJd5ntVz"]}'
 ```
+#### getaddressbalance
 
-getaddressbalance : 지갑 주소에 대해 현재 잔액을 조회합니다.
 ```bash
 Returns the balance for an address(es) (requires addressindex to be enabled).
 
@@ -154,9 +164,10 @@ Result:
 
 Example: hdac-cli hdac getaddressbalance '{"addresses": ["HDFd45jQ1e6khUwojLd8ndFWa6QJd5ntVz"]}'
 ```
+#### getblockhashes
 
-getblockhashes : 설정한 시간 범위 내의 블럭 해시를 조회할 수 있습니다.
-```bashReturns array of hashes of blocks within the timestamp range provided.
+```bash
+Returns array of hashes of blocks within the timestamp range provided.
 
 Arguments:
 1. high         (numeric, required) The newer block timestamp
@@ -181,8 +192,8 @@ Result:
 Examples: hdac-cli hdac getblockhashes 1231614698 1231024505
 
 ```
+#### getspentinfo
 
-getspentinfo : txid로 지정한 거래에서 송금한 출력이 이후에 어떤 거래에서 사용되었는지를 조회할 수 있습니다.
 ```bash
 Returns the txid and index where an output is spent.
 
@@ -201,8 +212,8 @@ Result:
 
 Example: hdac-cli hdac getspentinfo '{"txid": "0437cd7f8525ceed2324359c2d0ba26006d92d856a9c20fa0241106ee5a597c9", "index": 0}'
 ```
+#### getblockdeltas
 
-getblockdeltas : 블록 내의 잔액 변동을 조회합니다.
 ```bash
 Returns all changes for an block.
 
