@@ -59,7 +59,7 @@ int getpeernodeheight();
  **/
 Value getinfo(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)  
+    if (fHelp || params.size() != 0)
         throw runtime_error("Help message not found\n");
 
     proxyType proxy;
@@ -73,28 +73,28 @@ Value getinfo(const Array& params, bool fHelp)
     obj.push_back(Pair("protocolversion", mc_gState->m_NetworkParams->ProtocolVersion()));
     obj.push_back(Pair("chainname", string(mc_gState->m_NetworkParams->Name())));
     //obj.push_back(Pair("description", string((char*)mc_gState->m_NetworkParams->GetParam("chaindescription",NULL))));
-    obj.push_back(Pair("protocol", string((char*)mc_gState->m_NetworkParams->GetParam("chainprotocol",NULL))));    
-    //obj.push_back(Pair("port", GetListenPort()));    
-    //obj.push_back(Pair("setupblocks", mc_gState->m_NetworkParams->GetInt64Param("setupfirstblocks")));    
-    
-    obj.push_back(Pair("nodeaddress", HdacServerAddress() + strprintf(":%d",GetListenPort())));       
+    obj.push_back(Pair("protocol", string((char*)mc_gState->m_NetworkParams->GetParam("chainprotocol",NULL))));
+    //obj.push_back(Pair("port", GetListenPort()));
+    //obj.push_back(Pair("setupblocks", mc_gState->m_NetworkParams->GetInt64Param("setupfirstblocks")));
 
-    obj.push_back(Pair("burnaddress", BurnAddress(Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS))));  
+    obj.push_back(Pair("nodeaddress", HdacServerAddress() + strprintf(":%d",GetListenPort())));
+
+    obj.push_back(Pair("burnaddress", BurnAddress(Params().Base58Prefix(CChainParams::PUBKEY_ADDRESS))));
     if(mc_gState->m_NodePausedState & MC_NPS_INCOMING)
-        obj.push_back(Pair("incomingpaused", (mc_gState->m_NodePausedState & MC_NPS_INCOMING) ? true : false)); 
+        obj.push_back(Pair("incomingpaused", (mc_gState->m_NodePausedState & MC_NPS_INCOMING) ? true : false));
     if(mc_gState->m_NodePausedState & MC_NPS_MINING)
-        obj.push_back(Pair("miningpaused", (mc_gState->m_NodePausedState & MC_NPS_MINING) ? true : false));                
+        obj.push_back(Pair("miningpaused", (mc_gState->m_NodePausedState & MC_NPS_MINING) ? true : false));
 
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         //obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
-        
+
         obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance(fImportAddrs))));
-        
-        //obj.push_back(Pair("walletdbversion", mc_gState->GetWalletDBVersion()));                
+
+        //obj.push_back(Pair("walletdbversion", mc_gState->GetWalletDBVersion()));
     }
 #endif
-    obj.push_back(Pair("reindex",       fReindex));    
+    obj.push_back(Pair("reindex",       fReindex));
     obj.push_back(Pair("blocks",        (int)chainActive.Height()));
 
     int chain_blocks = getpeernodeheight();
@@ -102,7 +102,7 @@ Value getinfo(const Array& params, bool fHelp)
     int synced_rate = (chain_blocks == 0) ? 0 : ((float)chainActive.Height()/(float)chain_blocks * 100);
     if(synced_rate < 100)
         obj.push_back(Pair("block sync(%)",    synced_rate));
-    
+
     obj.push_back(Pair("timeoffset",    GetTimeOffset()));
     obj.push_back(Pair("connections",   (int)vNodes.size()));
     obj.push_back(Pair("proxy",         (proxy.IsValid() ? proxy.ToStringIPPort() : string())));
@@ -117,9 +117,9 @@ Value getinfo(const Array& params, bool fHelp)
         obj.push_back(Pair("unlocked_until", nWalletUnlockTime));
     obj.push_back(Pair("paytxfee",      ValueFromAmount(payTxFee.GetFeePerK())));
 #endif
-    
-    ::minRelayTxFee = CFeeRate(MIN_RELAY_TX_FEE);    
-    
+
+    ::minRelayTxFee = CFeeRate(MIN_RELAY_TX_FEE);
+
     obj.push_back(Pair("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK())));
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
     return obj;
@@ -185,56 +185,56 @@ string getparamstring(string param)
                 str += ",";
             }
             str += mapMultiArgs[param][i];
-        }        
+        }
     }
     return str;
 }
 
 Value getruntimeparams(const json_spirit::Array& params, bool fHelp)
 {
-    if (fHelp || params.size() > 1)                                            
+    if (fHelp || params.size() > 1)
         throw runtime_error("Help message not found\n");
-    
+
     Object obj;
-/*    
-    obj.push_back(Pair("daemon",GetBoolArg("-daemon",false)));                    
-    obj.push_back(Pair("datadir",mc_gState->m_Params->DataDir(0,0)));                    
-    obj.push_back(Pair("debug",getparamstring("-debug")));   
- */ 
-    obj.push_back(Pair("debug",GetArg("-debug", 1)));   
-    obj.push_back(Pair("port",GetListenPort()));   
-    obj.push_back(Pair("reindex",GetBoolArg("-reindex",false)));                    
+/*
+    obj.push_back(Pair("daemon",GetBoolArg("-daemon",false)));
+    obj.push_back(Pair("datadir",mc_gState->m_Params->DataDir(0,0)));
+    obj.push_back(Pair("debug",getparamstring("-debug")));
+ */
+    obj.push_back(Pair("debug",GetArg("-debug", 1)));
+    obj.push_back(Pair("port",GetListenPort()));
+    obj.push_back(Pair("reindex",GetBoolArg("-reindex",false)));
     obj.push_back(Pair("rescan",GetBoolArg("-rescan",false)));
     obj.push_back(Pair("importtxaddrs",GetBoolArg("-importtxaddrs",false)));
-/*    
-    obj.push_back(Pair("rpcallowip",getparamstring("-rpcallowip")));   
-    obj.push_back(Pair("rpcport",GetArg("-rpcport", BaseParams().RPCPort())));   
- */ 
-    obj.push_back(Pair("txindex",GetBoolArg("-txindex",false)));       
-    
-    obj.push_back(Pair("autosubscribe",GetArg("-autosubscribe","")));   
+/*
+    obj.push_back(Pair("rpcallowip",getparamstring("-rpcallowip")));
+    obj.push_back(Pair("rpcport",GetArg("-rpcport", BaseParams().RPCPort())));
+ */
+    obj.push_back(Pair("txindex",GetBoolArg("-txindex",false)));
+
+    obj.push_back(Pair("autosubscribe",GetArg("-autosubscribe","")));
     CKeyID keyID;
-    CPubKey pkey;            
+    CPubKey pkey;
     if(!pwalletMain->GetKeyFromAddressBook(pkey,MC_PTP_CONNECT))
     {
         if(fDebug>0)LogPrintf("hdac: Cannot find address having connect permission, trying default key\n");
         pkey=pwalletMain->vchDefaultKey;
     }
-    keyID=pkey.GetID();    
-    obj.push_back(Pair("handshakelocal",GetArg("-handshakelocal",CBitcoinAddress(keyID).ToString())));   
-    obj.push_back(Pair("bantx",GetArg("-bantx","")));                    
-    obj.push_back(Pair("lockblock",GetArg("-lockblock","")));                        
-    //obj.push_back(Pair("hideknownopdrops",GetBoolArg("-hideknownopdrops",false)));                    
-    //obj.push_back(Pair("maxshowndata",GetArg("-maxshowndata",MAX_OP_RETURN_SHOWN)));                    
-    //obj.push_back(Pair("miningrequirespeers",Params().MiningRequiresPeers()));                    
-    //obj.push_back(Pair("mineemptyrounds",Params().MineEmptyRounds()));                    
-    //obj.push_back(Pair("miningturnover",Params().MiningTurnover()));                    
-    //obj.push_back(Pair("lockadminminerounds",Params().LockAdminMineRounds()));                    
-    obj.push_back(Pair("gen",GetBoolArg("-gen", false)));                    
-    obj.push_back(Pair("genproclimit",GetArg("-genproclimit", 1)));                    
+    keyID=pkey.GetID();
+    obj.push_back(Pair("handshakelocal",GetArg("-handshakelocal",CBitcoinAddress(keyID).ToString())));
+    obj.push_back(Pair("bantx",GetArg("-bantx","")));
+    obj.push_back(Pair("lockblock",GetArg("-lockblock","")));
+    //obj.push_back(Pair("hideknownopdrops",GetBoolArg("-hideknownopdrops",false)));
+    //obj.push_back(Pair("maxshowndata",GetArg("-maxshowndata",MAX_OP_RETURN_SHOWN)));
+    //obj.push_back(Pair("miningrequirespeers",Params().MiningRequiresPeers()));
+    //obj.push_back(Pair("mineemptyrounds",Params().MineEmptyRounds()));
+    //obj.push_back(Pair("miningturnover",Params().MiningTurnover()));
+    //obj.push_back(Pair("lockadminminerounds",Params().LockAdminMineRounds()));
+    obj.push_back(Pair("gen",GetBoolArg("-gen", false)));
+    obj.push_back(Pair("genproclimit",GetArg("-genproclimit", 1)));
 /*
-    obj.push_back(Pair("shortoutput",GetBoolArg("-shortoutput",false)));                    
-    obj.push_back(Pair("walletdbversion", mc_gState->GetWalletDBVersion()));                
+    obj.push_back(Pair("shortoutput",GetBoolArg("-shortoutput",false)));
+    obj.push_back(Pair("walletdbversion", mc_gState->GetWalletDBVersion()));
 */
     return obj;
 }
@@ -259,17 +259,17 @@ bool paramtobool(Value param,bool strict)
             }
             else
             {
-                return false;            
+                return false;
             }
         }
     }
-    
+
     if(param.type() != bool_type)
     {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type, should be boolean");                            
-    }    
-    
-    return param.get_bool();    
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type, should be boolean");
+    }
+
+    return param.get_bool();
 }
 
 bool paramtobool(Value param)
@@ -279,9 +279,9 @@ bool paramtobool(Value param)
 
 Value setruntimeparam(const json_spirit::Array& params, bool fHelp)
 {
-    if (fHelp || params.size() != 2)                                            
+    if (fHelp || params.size() != 2)
         throw runtime_error("Help message not found\n");
-    
+
     string param_name=params[0].get_str();
     bool fFound=false;
 
@@ -299,7 +299,7 @@ Value setruntimeparam(const json_spirit::Array& params, bool fHelp)
             {
                 nValue=atoi(params[1].get_str().c_str());
             }
-            
+
             if( nValue >= 0 )
             {
                 mapArgs ["-" + param_name]=strprintf("%d", nValue);
@@ -307,13 +307,13 @@ Value setruntimeparam(const json_spirit::Array& params, bool fHelp)
             }
             else
             {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "Should be non-negative");                                                
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "Should be non-negative");
             }
         }
         else
         {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type");
-        }        
+        }
     }
     if(param_name == "miningrequirespeers")
     {
@@ -348,11 +348,11 @@ Value setruntimeparam(const json_spirit::Array& params, bool fHelp)
             {
                 dValue=atof(params[1].get_str().c_str());
             }
-            mapArgs ["-" + param_name]= strprintf("%f", dValue);                                                                
+            mapArgs ["-" + param_name]= strprintf("%f", dValue);
         }
         else
         {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type");                                            
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type");
         }
         fFound=true;
     }
@@ -371,16 +371,16 @@ Value setruntimeparam(const json_spirit::Array& params, bool fHelp)
             }
             if( (dValue >= 0.) && (dValue <= 1.) )
             {
-                mapArgs ["-" + param_name]= strprintf("%f", dValue);                                                                
+                mapArgs ["-" + param_name]= strprintf("%f", dValue);
             }
             else
             {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "Should be in range (0,1)");                                                
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "Should be in range (0,1)");
             }
         }
         else
         {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type");                                            
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type");
         }
         fFound=true;
     }
@@ -401,16 +401,16 @@ Value setruntimeparam(const json_spirit::Array& params, bool fHelp)
             }
             if( nValue >= 0 )
             {
-                mapArgs ["-" + param_name]=strprintf("%d", nValue);                                
+                mapArgs ["-" + param_name]=strprintf("%d", nValue);
             }
             else
             {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "Should be non-negative");                                                
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "Should be non-negative");
             }
         }
         else
         {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type");                                            
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type");
         }
         fFound=true;
     }
@@ -421,16 +421,16 @@ Value setruntimeparam(const json_spirit::Array& params, bool fHelp)
             string error=SetBannedTxs(params[1].get_str());
             if(error.size())
             {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, error);                                                                        
+                throw JSONRPCError(RPC_INVALID_PARAMETER, error);
             }
             else
             {
-                mapArgs ["-" + param_name]=params[1].get_str();                                
+                mapArgs ["-" + param_name]=params[1].get_str();
             }
-        }   
+        }
         else
         {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type");                                                        
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type");
         }
         fFound=true;
     }
@@ -441,16 +441,16 @@ Value setruntimeparam(const json_spirit::Array& params, bool fHelp)
             string error=SetLockedBlock(params[1].get_str());
             if(error.size())
             {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, error);                                                                        
+                throw JSONRPCError(RPC_INVALID_PARAMETER, error);
             }
             else
             {
-                mapArgs ["-" + param_name]=params[1].get_str();                                
+                mapArgs ["-" + param_name]=params[1].get_str();
             }
-        }   
+        }
         else
         {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type");                                                        
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type");
         }
         fFound=true;
     }
@@ -459,18 +459,18 @@ Value setruntimeparam(const json_spirit::Array& params, bool fHelp)
         if(params[1].type() == str_type)
         {
             CBitcoinAddress address(params[1].get_str());
-            if (!address.IsValid())    
+            if (!address.IsValid())
             {
-                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");                                                                        
+                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
             }
             else
             {
-                mapArgs ["-" + param_name]=params[1].get_str();                                
+                mapArgs ["-" + param_name]=params[1].get_str();
             }
-        }   
+        }
         else
         {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type");                                                        
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type");
         }
         fFound=true;
     }
@@ -492,41 +492,41 @@ Value setruntimeparam(const json_spirit::Array& params, bool fHelp)
             {
                 mode |= MC_WMD_AUTOSUBSCRIBE_STREAMS;
                 mode |= MC_WMD_AUTOSUBSCRIBE_ASSETS;
-            }                
-            
+            }
+
             if(pwalletTxsMain)
             {
                 pwalletTxsMain->SetMode(mode,MC_WMD_AUTOSUBSCRIBE_STREAMS | MC_WMD_AUTOSUBSCRIBE_ASSETS);
             }
-            mapArgs ["-" + param_name]=params[1].get_str();                                
-        }   
+            mapArgs ["-" + param_name]=params[1].get_str();
+        }
         else
         {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type");                                                        
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter value type");
         }
         fFound=true;
     }
-    
+
     if(!fFound)
     {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Unsupported runtime parameter: " + param_name);                                                    
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Unsupported runtime parameter: " + param_name);
     }
 
-    SetHdacRuntimeParams();    
-    
+    SetHdacRuntimeParams();
+
     return Value::null;
-}    
+}
 
 Value getblockchainparams(const json_spirit::Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 2)                                            // MCHN
         throw runtime_error("Help message not found\n");
 
-    
+
     bool fDisplay = true;
     if (params.size() > 0)
         fDisplay = params[0].get_bool();
-    
+
     int nHeight=chainActive.Height();
     if (params.size() > 1)
     {
@@ -539,16 +539,16 @@ Value getblockchainparams(const json_spirit::Array& params, bool fHelp)
         }
         else
         {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "with-upgrades should be boolean");                
-/*            
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "with-upgrades should be boolean");
+/*
             if(params[1].type() == int_type)
             {
                 nHeight=params[1].get_int();
-            }            
- */ 
+            }
+ */
         }
     }
-    
+
     if (nHeight < 0 || nHeight > chainActive.Height())
     {
         nHeight+=chainActive.Height();
@@ -557,10 +557,10 @@ Value getblockchainparams(const json_spirit::Array& params, bool fHelp)
             throw JSONRPCError(RPC_BLOCK_NOT_FOUND, "Block height out of range");
         }
     }
-    
+
     Object obj;
     int protocol_version=(int)mc_gState->m_NetworkParams->GetInt64Param("protocolversion");
-    
+
     if(nHeight)
     {
         protocol_version=mc_gState->m_NetworkParams->ProtocolVersion();
@@ -582,14 +582,14 @@ Value getblockchainparams(const json_spirit::Array& params, bool fHelp)
             {
                 ptr=NULL;
             }
-            /*            
+            /*
             else
             {
                 if(((mc_gState->m_NetworkParams->m_lpParams+i)->m_Type & MC_PRM_DATA_TYPE_MASK) == MC_PRM_STRING)
-                {                    
+                {
                     if(size == 1)
                     {
-                        ptr=NULL;                    
+                        ptr=NULL;
                     }
                 }
             }
@@ -600,7 +600,7 @@ Value getblockchainparams(const json_spirit::Array& params, bool fHelp)
             }
             else
             {
-                param_name=(mc_gState->m_NetworkParams->m_lpParams+i)->m_Name;            
+                param_name=(mc_gState->m_NetworkParams->m_lpParams+i)->m_Name;
             }
 
             if(ptr)
@@ -620,11 +620,11 @@ Value getblockchainparams(const json_spirit::Array& params, bool fHelp)
                     case MC_PRM_BOOLEAN:
                         if(*(char*)ptr)
                         {
-                            param_value=true;                               
+                            param_value=true;
                         }
                         else
                         {
-                            param_value=false;                               
+                            param_value=false;
                         }
                         break;
                     case MC_PRM_INT32:
@@ -638,12 +638,12 @@ Value getblockchainparams(const json_spirit::Array& params, bool fHelp)
                             }
                             else
                             {
-                                param_value=-((double)(-n)+mc_gState->m_NetworkParams->ParamAccuracy())/MC_PRM_DECIMAL_GRANULARITY;                                        
+                                param_value=-((double)(-n)+mc_gState->m_NetworkParams->ParamAccuracy())/MC_PRM_DECIMAL_GRANULARITY;
                             }
                         }
                         else
                         {
-                            param_value=(int)mc_GetLE(ptr,4);                                                                
+                            param_value=(int)mc_GetLE(ptr,4);
                         }
                         break;
                     case MC_PRM_UINT32:
@@ -653,14 +653,14 @@ Value getblockchainparams(const json_spirit::Array& params, bool fHelp)
                         }
                         else
                         {
-                            param_value=mc_GetLE(ptr,4);                                                                
+                            param_value=mc_GetLE(ptr,4);
                         }
                         break;
                     case MC_PRM_INT64:
-                        param_value=mc_GetLE(ptr,8);                                                                
+                        param_value=mc_GetLE(ptr,8);
                         break;
                     case MC_PRM_DOUBLE:
-                        param_value=*(double*)ptr;                                                                
+                        param_value=*(double*)ptr;
                         break;
                 }
             }
@@ -676,11 +676,11 @@ Value getblockchainparams(const json_spirit::Array& params, bool fHelp)
                 }
             }
 
-            obj.push_back(Pair(param_name,param_value));        
+            obj.push_back(Pair(param_name,param_value));
         }
     }
-    
-    return obj;    
+
+    return obj;
 }
 
 void SetSynchronizedFlag(CTxDestination &dest,Object &ret)
@@ -700,16 +700,16 @@ void SetSynchronizedFlag(CTxDestination &dest,Object &ret)
         {
             memcpy(&entStat,lpScriptID,MC_TDB_ENTITY_ID_SIZE);
             entStat.m_Entity.m_EntityType=MC_TET_SCRIPT_ADDRESS | MC_TET_CHAINPOS;
-        }            
+        }
         if(pwalletTxsMain->FindEntity(&entStat))
         {
             if(entStat.m_Flags & MC_EFL_NOT_IN_SYNC)
             {
-                ret.push_back(Pair("synchronized",false));                                                            
+                ret.push_back(Pair("synchronized",false));
             }
             else
             {
-                ret.push_back(Pair("synchronized",true));                                                                            
+                ret.push_back(Pair("synchronized",true));
             }
         }
     }
@@ -718,8 +718,8 @@ void SetSynchronizedFlag(CTxDestination &dest,Object &ret)
 Object AddressEntry(CBitcoinAddress& address,uint32_t verbose)
 {
 // 0x01 add isvalid=true
-// 0x02 verbose    
-    
+// 0x02 verbose
+
     Object ret;
     if(verbose & 0x01)
     {
@@ -742,8 +742,8 @@ Object AddressEntry(CBitcoinAddress& address,uint32_t verbose)
             ret.push_back(Pair("account", pwalletMain->mapAddressBook[dest].name));
     #endif
         SetSynchronizedFlag(dest,ret);
-    }        
-    
+    }
+
     return ret;
 }
 
@@ -796,7 +796,7 @@ Value validateaddress(const Array& params, bool fHelp)
     }
 
     return AddressEntry(address,0x03);
-/*    
+/*
     ret.push_back(Pair("isvalid", isValid));
     if (isValid)
     {
@@ -815,9 +815,9 @@ Value validateaddress(const Array& params, bool fHelp)
             ret.push_back(Pair("account", pwalletMain->mapAddressBook[dest].name));
 #endif
         SetSynchronizedFlag(dest,ret);
-        
+
     }
-*/   
+*/
 //    return ret;
 }
 
@@ -827,30 +827,30 @@ Value createkeypairs(const Array& params, bool fHelp)
         throw runtime_error("Help message not found\n");
 
     int count=1;
-    if (params.size() > 0)    
+    if (params.size() > 0)
     {
         count=paramtoint(params[0],true,0,"Invalid count");
     }
-            
+
     Array retArray;
     bool fCompressed = true;
-    
+
     for(int i=0;i<count;i++)
     {
         CKey secret;
         secret.MakeNewKey(fCompressed);
-        
+
         CPubKey pubkey = secret.GetPubKey();
 
         Object entry;
         entry.push_back(Pair("address", CBitcoinAddress(pubkey.GetID()).ToString()));
         entry.push_back(Pair("pubkey", HexStr(pubkey)));
         entry.push_back(Pair("privkey", CBitcoinSecret(secret).ToString()));
-        
+
         retArray.push_back(entry);
-    }        
-    
-    
+    }
+
+
     return retArray;
 }
 
@@ -860,7 +860,7 @@ Value getaddresses(const Array& params, bool fHelp)
         throw runtime_error("Help message not found\n");
 
     int verbose=0x00;
-    
+
     if (params.size() > 0)
     {
         if(params[0].type() == bool_type)
@@ -868,12 +868,12 @@ Value getaddresses(const Array& params, bool fHelp)
             if(params[0].get_bool())
             {
                 verbose=0x02;
-            }        
+            }
         }
         else
         {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid value for 'verbose' parameter, should be boolean");                                                                
-        }        
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid value for 'verbose' parameter, should be boolean");
+        }
     }
 
     Array ret;
@@ -886,7 +886,7 @@ Value getaddresses(const Array& params, bool fHelp)
         entity_count=pwalletTxsMain->GetEntityListCount();
         for(int i=0;i<entity_count;i++)
         {
-            lpEntity=pwalletTxsMain->GetEntity(i);        
+            lpEntity=pwalletTxsMain->GetEntity(i);
             CBitcoinAddress address;
             if( (lpEntity->m_Entity.m_EntityType & MC_TET_ORDERMASK) == MC_TET_CHAINPOS)
             {
@@ -914,10 +914,10 @@ Value getaddresses(const Array& params, bool fHelp)
                     }
                 }
             }
-        }        
+        }
     }
     else
-    {        
+    {
         // Find all addresses that have the given account
         BOOST_FOREACH(const PAIRTYPE(CBitcoinAddress, CAddressBookData)& item, pwalletMain->mapAddressBook)
         {
@@ -941,11 +941,11 @@ Value getaddresses(const Array& params, bool fHelp)
 
                 SetSynchronizedFlag(dest,addr);
 
-                ret.push_back(addr);            
+                ret.push_back(addr);
             }
             else
             {
-                ret.push_back(address.ToString());            
+                ret.push_back(address.ToString());
             }
 
         }
@@ -1011,12 +1011,12 @@ CScript _createmultisig_redeemScript(const Array& params)
     CScript result = GetScriptForMultisig(nRequired, pubkeys);
 
     if(Params().RequireStandard())
-    {    
+    {
         if (result.size() > MAX_SCRIPT_ELEMENT_SIZE)
             throw runtime_error(
                     strprintf("redeemScript exceeds size limit: %d > %d", result.size(), MAX_SCRIPT_ELEMENT_SIZE));
     }
-    
+
     return result;
 }
 
@@ -1027,7 +1027,7 @@ Value createmultisig(const Array& params, bool fHelp)
         throw runtime_error("Help message not found\n");
     }
 
-    
+
     if( MCP_ALLOW_ARBITRARY_OUTPUTS == 0 )
     {
         if(MCP_ALLOW_P2SH_OUTPUTS == 0)
@@ -1035,7 +1035,7 @@ Value createmultisig(const Array& params, bool fHelp)
             throw JSONRPCError(RPC_NOT_ALLOWED, "P2SH outputs are not allowed for this blockchain");
         }
     }
-    
+
     // Construct using pay-to-script-hash:
     CScript inner = _createmultisig_redeemScript(params);
     CScriptID innerID(inner);
@@ -1178,7 +1178,7 @@ Value getaddressmempool(const Array& params, bool fHelp)
             "    \"address\"  (string) The base58check encoded address\n"
             "    \"txid\"  (string) The related txid\n"
             "    \"index\"  (number) The related input or output index\n"
-            "    \"qty\"  (number) The difference of dac\n"
+            "    \"satoshis\"  (number) The difference of satoshis\n"
             "    \"timestamp\"  (number) The time the transaction entered the mempool (seconds)\n"
             "    \"prevtxid\"  (string) The previous txid (if spending)\n"
             "    \"prevout\"  (string) The previous transaction output index (if spending)\n"
@@ -1220,8 +1220,7 @@ Value getaddressmempool(const Array& params, bool fHelp)
         delta.push_back(Pair("address", address));
         delta.push_back(Pair("txid", it->first.txhash.GetHex()));
         delta.push_back(Pair("index", (int)it->first.index));
-        //delta.push_back(Pair("satoshis", it->second.amount));
-        delta.push_back(Pair("qty", ValueFromAmount(it->second.amount)));
+        delta.push_back(Pair("satoshis", it->second.amount));
         delta.push_back(Pair("timestamp", it->second.time));
         if (it->second.amount < 0) {
             delta.push_back(Pair("prevtxid", it->second.prevhash.GetHex()));
@@ -1262,7 +1261,7 @@ Value getaddressutxos(const Array& params, bool fHelp)
             "    \"height\"  (number) The block height\n"
             "    \"outputIndex\"  (number) The output index\n"
             "    \"script\"  (strin) The script hex encoded\n"
-            "    \"qty\"  (number) The number of dac of the output\n"
+            "    \"satoshis\"  (number) The number of satoshis of the output\n"
             "  }\n"
             "]\n"
             "\nExamples:\n"
@@ -1311,8 +1310,7 @@ Value getaddressutxos(const Array& params, bool fHelp)
         output.push_back(Pair("txid", it->first.txhash.GetHex()));
         output.push_back(Pair("outputIndex", (int)it->first.index));
         output.push_back(Pair("script", HexStr(it->second.script.begin(), it->second.script.end())));
-        //output.push_back(Pair("satoshis", it->second.satoshis));
-        output.push_back(Pair("qty", ValueFromAmount(it->second.satoshis)));
+        output.push_back(Pair("satoshis", it->second.satoshis));
         output.push_back(Pair("height", it->second.blockHeight));
         utxos.push_back(output);
     }
@@ -1351,7 +1349,7 @@ Value getaddressdeltas(const Array& params, bool fHelp)
             "\nResult:\n"
             "[\n"
             "  {\n"
-            "    \"qty\"  (number) The difference of dac\n"
+            "    \"satoshis\"  (number) The difference of satoshis\n"
             "    \"txid\"  (string) The related txid\n"
             "    \"index\"  (number) The related input or output index\n"
             "    \"height\"  (number) The block height\n"
@@ -1425,8 +1423,7 @@ Value getaddressdeltas(const Array& params, bool fHelp)
 
         //UniValue delta(UniValue::VOBJ);
         Object delta;
-        //delta.push_back(Pair("satoshis", it->second));
-        delta.push_back(Pair("qty", ValueFromAmount(it->second)));
+        delta.push_back(Pair("satoshis", it->second));
         delta.push_back(Pair("txid", it->first.txhash.GetHex()));
         delta.push_back(Pair("index", (int)it->first.index));
         delta.push_back(Pair("blockindex", (int)it->first.txindex));
@@ -1485,7 +1482,7 @@ Value getaddressbalance(const Array& params, bool fHelp)
             "}\n"
             "\nResult:\n"
             "{\n"
-            "  \"qty\"  (string) The current balance in dac\n"
+            "  \"balance\"  (string) The current balance in satoshis\n"
             "  \"received\"  (string) The total number of satoshis received (including change)\n"
             "}\n"
             "\nExamples:\n"
@@ -1520,8 +1517,8 @@ Value getaddressbalance(const Array& params, bool fHelp)
 
     //UniValue result(UniValue::VOBJ);
     Object result;
-    result.push_back(Pair("qty", ValueFromAmount(balance)));
-    result.push_back(Pair("received", ValueFromAmount(received)));
+    result.push_back(Pair("balance", balance));
+    result.push_back(Pair("received", received));
 
     return result;
 
@@ -1574,12 +1571,6 @@ Value getaddresstxids(const Array& params, bool fHelp)
         if (startValue.type() == int_type && endValue.type() == int_type) {
             start = startValue.get_int();
             end = endValue.get_int();
-	    if (start <= 0 || end <= 0) {
-       	      throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Start and end is expected to be greater than zero");
-            }
-            if (end < start) {
-              throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "End value is expected to be greater than start");
-            }
         }
     }
 
@@ -1587,11 +1578,11 @@ Value getaddresstxids(const Array& params, bool fHelp)
 
     for (std::vector<std::pair<uint160, int> >::iterator it = addresses.begin(); it != addresses.end(); it++) {
         if (start > 0 && end > 0) {
-	    if (!GetAddressIndex((*it).first, (*it).second, addressIndex, start, end)) {
+            if (!GetAddressIndex((*it).first, (*it).second, addressIndex, start, end)) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available for address");
             }
-	} else {
-	    if (!GetAddressIndex((*it).first, (*it).second, addressIndex)) {
+        } else {
+            if (!GetAddressIndex((*it).first, (*it).second, addressIndex)) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available for address");
             }
         }
