@@ -44,6 +44,41 @@ Object AddressEntry(CBitcoinAddress& address,uint32_t verbose);
 int paramtoint(Value param,bool check_for_min,int min_value,string error_message);
 int getpeernodeheight();
 
+class InRangeArrayPush
+{
+public:
+    InRangeArrayPush(Array &array, int from, int count);
+
+    void operator()(const std::string &item);
+
+private:
+    Array &mArray;
+    int mCurrentIndex;
+    int mFrom;
+    int mTo;
+    bool mNotFilter;
+};
+
+InRangeArrayPush::InRangeArrayPush(Array &array,int from = -1, int count = -1) :
+    mArray(array), mFrom(from), mTo(from+count), mCurrentIndex(0), mNotFilter(false) {
+    if (from < 0 || count < 0)    {
+        mNotFilter = true;
+    }
+}
+
+void InRangeArrayPush::operator()(const std::string &item)
+{
+    if (mNotFilter) {
+        mArray.push_back(item);
+        return;
+    }
+
+    if (mCurrentIndex >= mFrom && mCurrentIndex < mTo)    {
+        mArray.push_back(item);
+    }
+    ++mCurrentIndex;
+}
+
 /**
  * @note Do not add or change anything in the information returned by this
  * method. `getinfo` exists for backwards-compatibility only. It combines
@@ -1540,6 +1575,8 @@ Value getaddresstxids(const Array& params, bool fHelp)
             "    ]\n"
             "  \"start\" (number) The start block height\n"
             "  \"end\" (number) The end block height\n"
+            "  \"from\" (number) The starting index on found results\n"
+            "  \"count\" (number) The number of items to show on found results\n"
             "}\n"
             "\nResult:\n"
             "[\n"
@@ -1560,17 +1597,37 @@ Value getaddresstxids(const Array& params, bool fHelp)
 
     int start = 0;
     int end = 0;
+    int from = -1;
+    //int to = -1;
+    int count = -1;
+    //bool hasRange = false;
     //if (params[0].isObject()) {
     if (params[0].type() == obj_type) {
         //UniValue startValue = find_value(params[0].get_obj(), "start");
         //UniValue endValue = find_value(params[0].get_obj(), "end");
         Value startValue = find_value(params[0].get_obj(), "start");
         Value endValue = find_value(params[0].get_obj(), "end");
+        Value fromValue = find_value(params[0].get_obj(), "from");
+        Value countValue = find_value(params[0].get_obj(), "count");
 
         //if (startValue.isNum() && endValue.isNum()) {
         if (startValue.type() == int_type && endValue.type() == int_type) {
             start = startValue.get_int();
             end = endValue.get_int();
+        }
+
+        if (fromValue.type() == int_type && countValue.type() == int_type) {
+            from = fromValue.get_int();
+            //to = from + countValue.get_int();
+            count = countValue.get_int();
+            //if (from < 0 || to < 0) {
+            if (from < 0 || count < 0) {
+              throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From and to is expected to be greater than zero");
+            }
+            if (end < start) {
+              throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "To value is expected to be greater than From");
+            }
+            //hasRange = true;
         }
     }
 
@@ -1591,6 +1648,9 @@ Value getaddresstxids(const Array& params, bool fHelp)
     std::set<std::pair<int, std::string> > txids;
     //UniValue result(UniValue::VARR);
     Array result;
+    //int currentIndex = 0;
+
+    InRangeArrayPush pushArrayInRange(result, from, count);
 
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++) {
         int height = it->first.blockHeight;
@@ -1600,14 +1660,30 @@ Value getaddresstxids(const Array& params, bool fHelp)
             txids.insert(std::make_pair(height, txid));
         } else {
             if (txids.insert(std::make_pair(height, txid)).second) {
-                result.push_back(txid);
+                pushArrayInRange(txid);
+//                if (hasRange)    {
+//                    if (currentIndex >= from && currentIndex < to) {
+//                        result.push_back(txid);
+//                    }
+//                    ++currentIndex;
+//                } else {
+//                    result.push_back(txid);
+//                }
             }
         }
     }
 
     if (addresses.size() > 1) {
         for (std::set<std::pair<int, std::string> >::const_iterator it=txids.begin(); it!=txids.end(); it++) {
-            result.push_back(it->second);
+            pushArrayInRange(it->second);
+//            if (hasRange)    {
+//                if (currentIndex >= from && currentIndex < to) {
+//                    result.push_back(it->second);
+//                }
+//                ++currentIndex;
+//            } else {
+//                result.push_back(it->second);
+//            }
         }
     }
 
