@@ -581,6 +581,9 @@ public:
 
         // [hard fork] expected date 2018/09/24 ~ 
         nStartHeightChBlockSigner = 138700;//<<<<<
+
+        //[hard fork] expected date 2018/10/18 ~
+    	nStartHeightBlockRewardAdj = 150000;
         #endif
     }
     

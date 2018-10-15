@@ -28,3 +28,7 @@
 ----------------
 # - ver:1.06.0
 # 20180924 - fixed issue of block signer
+
+----------------
+# - ver:1.07.0
+# 20181015 - changed Block reward value from 5000 to 2500.

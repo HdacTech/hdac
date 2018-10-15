@@ -92,6 +92,8 @@ public:
     int GetStartHeightEpowV2() const { return nStartHeightEpowV2; }
 
     int GetStartHeightChBlockSigner() const { return nStartHeightChBlockSigner; }
+	
+	int GetStartHeightBlockRewardAdj() const { return nStartHeightBlockRewardAdj; }
     #endif
     
 protected:
@@ -135,6 +137,9 @@ protected:
     int nStartHeightEpowV2;
     // Block height at which the check-block-signer is active
     int nStartHeightChBlockSigner;
+
+    // Block reward value ajust from 5000 to 2500 after 150000 block, 
+    int nStartHeightBlockRewardAdj;
     #endif
 };
 
