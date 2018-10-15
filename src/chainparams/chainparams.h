@@ -138,7 +138,7 @@ protected:
     // Block height at which the check-block-signer is active
     int nStartHeightChBlockSigner;
 
-    // Block reward value ajust from 5000 to 2500 after 149950 block, 
+    // Block reward value ajust from 5000 to 2500 after 150000 block, 
     int nStartHeightBlockRewardAdj;
     #endif
 };
