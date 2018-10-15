@@ -1647,6 +1647,12 @@ CAmount GetBlockValue(int nHeight, const CAmount& nFees) //HH
 {
     CAmount nSubsidy = MCP_INITIAL_BLOCK_REWARD;// * COIN
 
+	//Block Reward adjustment.
+    if(nHeight >= Params().GetStartHeightBlockRewardAdj())
+    {
+    	nSubsidy = nSubsidy / 2; 
+    }
+
     if(nHeight < 16801 && MCP_FIRST_BLOCK_REWARD != 0)
     {
     	nSubsidy = (MCP_FIRST_BLOCK_REWARD / 16800); //HH
