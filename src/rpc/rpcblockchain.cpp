@@ -8,6 +8,7 @@
 #include "core/main.h"
 #include "rpc/rpcserver.h"
 #include "rpc/rpcserver.h"
+#include "rpc/InRangeArrayPush.h"
 #include "utils/sync.h"
 #include "utils/util.h"
 
@@ -428,6 +429,8 @@ Value getblockhashes(const Array& params, bool fHelp)
             "    {\n"
             "      \"noOrphans\":true   (boolean) will only include blocks on the main chain\n"
             "      \"logicalTimes\":true   (boolean) will include logical timestamps with hashes\n"
+            "      \"from\"  (number) The staring index on found results\n"
+            "      \"count\" (number) The number of items to show on found results\n"
             "    }\n"
             "\nResult:\n"
             "[\n"
@@ -449,6 +452,8 @@ Value getblockhashes(const Array& params, bool fHelp)
     unsigned int low = params[1].get_int();
     bool fActiveOnly = false;
     bool fLogicalTS = false;
+    int from = -1;
+    int count = -1;
 
     if (params.size() > 2) {
         //if (params[2].isObject()) {
@@ -457,6 +462,8 @@ Value getblockhashes(const Array& params, bool fHelp)
             //UniValue returnLogical = find_value(params[2].get_obj(), "logicalTimes");
             Value noOrphans = find_value(params[2].get_obj(), "noOrphans");
             Value returnLogical = find_value(params[2].get_obj(), "logicalTimes");
+	    Value fromValue = find_value(params[2].get_obj(), "from");
+	    Value countValue = find_value(params[2].get_obj(), "count");
 
             //if (noOrphans.isBool())
             if (noOrphans.type() == bool_type)
@@ -465,6 +472,18 @@ Value getblockhashes(const Array& params, bool fHelp)
             //if (returnLogical.isBool())
             if (returnLogical.type() == bool_type)
                 fLogicalTS = returnLogical.get_bool();
+
+	    if (fromValue.type() == int_type && countValue.type() == int_type) {
+		from = fromValue.get_int();
+		//to = from + countValue.get_int();
+		count = countValue.get_int();
+
+		//if (from < 0 || to < 0) {
+		if (from < 0 || count < 0) {
+		    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From and to is expected to be greater than zero");
+		}
+		//hasRange = true;
+	    }
         }
     }
 
@@ -480,15 +499,19 @@ Value getblockhashes(const Array& params, bool fHelp)
     //UniValue result(UniValue::VARR);
     Array result;
 
+    InRangeArrayPush pushArrayInRange(result, from, count);
+
     for (std::vector<std::pair<uint256, unsigned int> >::const_iterator it=blockHashes.begin(); it!=blockHashes.end(); it++) {
         if (fLogicalTS) {
             //UniValue item(UniValue::VOBJ);
             Object item;
             item.push_back(Pair("blockhash", it->first.GetHex()));
             item.push_back(Pair("logicalts", (int)it->second));
-            result.push_back(item);
+//            result.push_back(item);
+	    pushArrayInRange(item);
         } else {
-            result.push_back(it->first.GetHex());
+//            result.push_back(it->first.GetHex());
+	    pushArrayInRange(it->first.GetHex());
         }
     }
 

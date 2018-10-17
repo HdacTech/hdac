@@ -18,6 +18,7 @@
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
+#include "rpc/InRangeArrayPush.h"
 #endif
 
 #include <stdint.h>
@@ -43,41 +44,6 @@ bool CBitcoinAddressFromTxEntity(CBitcoinAddress &address,mc_TxEntity *lpEntity)
 Object AddressEntry(CBitcoinAddress& address,uint32_t verbose);
 int paramtoint(Value param,bool check_for_min,int min_value,string error_message);
 int getpeernodeheight();
-
-class InRangeArrayPush
-{
-public:
-    InRangeArrayPush(Array &array, int from, int count);
-
-    void operator()(const std::string &item);
-
-private:
-    Array &mArray;
-    int mCurrentIndex;
-    int mFrom;
-    int mTo;
-    bool mNotFilter;
-};
-
-InRangeArrayPush::InRangeArrayPush(Array &array,int from = -1, int count = -1) :
-    mArray(array), mFrom(from), mTo(from+count), mCurrentIndex(0), mNotFilter(false) {
-    if (from < 0 || count < 0)    {
-        mNotFilter = true;
-    }
-}
-
-void InRangeArrayPush::operator()(const std::string &item)
-{
-    if (mNotFilter) {
-        mArray.push_back(item);
-        return;
-    }
-
-    if (mCurrentIndex >= mFrom && mCurrentIndex < mTo)    {
-        mArray.push_back(item);
-    }
-    ++mCurrentIndex;
-}
 
 /**
  * @note Do not add or change anything in the information returned by this
@@ -1286,6 +1252,8 @@ Value getaddressutxos(const Array& params, bool fHelp)
             "      \"address\"  (string) The base58check encoded address\n"
             "      ,...\n"
             "    ],\n"
+            "  \"from\"  (number) The staring index on found results\n"
+            "  \"count\" (number) The number of items to show on found results\n"
             "  \"chainInfo\"  (boolean) Include chain info with results\n"
             "}\n"
             "\nResult\n"
@@ -1305,14 +1273,29 @@ Value getaddressutxos(const Array& params, bool fHelp)
             );
 
     bool includeChainInfo = false;
+    int from = -1;	
+    int count = -1;
+
     //if (params[0].isObject()) {
     if (params[0].type() == obj_type) {
         //UniValue chainInfo = find_value(params[0].get_obj(), "chainInfo");
         const Value& chainInfo = find_value(params[0].get_obj(), "chainInfo");
+        const Value& fromValue = find_value(params[0].get_obj(), "from");
+        const Value& countValue = find_value(params[0].get_obj(), "count");
         //if (chainInfo.isBool()) {
         if (chainInfo.type() == bool_type) {
             includeChainInfo = chainInfo.get_bool();
         }
+
+        if (fromValue.type() == int_type && countValue.type() == int_type) {
+            from = fromValue.get_int();
+            //to = from + countValue.get_int();
+            count = countValue.get_int();
+            //if (from < 0 || to < 0) {
+            if (from < 0 || count < 0) {
+              throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From and to is expected to be greater than zero");
+            }
+	}
     }
 
     std::vector<std::pair<uint160, int> > addresses;
@@ -1333,6 +1316,8 @@ Value getaddressutxos(const Array& params, bool fHelp)
 
     Array utxos;
 
+    InRangeArrayPush pushArrayInRange(utxos, from, count);
+
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++) {
         //UniValue output(UniValue::VOBJ);
         Object output;
@@ -1347,7 +1332,8 @@ Value getaddressutxos(const Array& params, bool fHelp)
         output.push_back(Pair("script", HexStr(it->second.script.begin(), it->second.script.end())));
         output.push_back(Pair("satoshis", it->second.satoshis));
         output.push_back(Pair("height", it->second.blockHeight));
-        utxos.push_back(output);
+//        utxos.push_back(output);
+        pushArrayInRange(output);
     }
 
     if (includeChainInfo) {
@@ -1379,6 +1365,8 @@ Value getaddressdeltas(const Array& params, bool fHelp)
             "    ]\n"
             "  \"start\" (number) The start block height\n"
             "  \"end\" (number) The end block height\n"
+            "  \"from\"  (number) The staring index on found results\n"
+            "  \"count\" (number) The number of items to show on found results\n"
             "  \"chainInfo\" (boolean) Include chain info in results, only applies if start and end specified\n"
             "}\n"
             "\nResult:\n"
@@ -1403,6 +1391,8 @@ Value getaddressdeltas(const Array& params, bool fHelp)
     //UniValue chainInfo = find_value(params[0].get_obj(), "chainInfo");
     const Value &startValue = find_value(oparam, "start");
     const Value &endValue = find_value(oparam, "end");
+    const Value &fromValue = find_value(oparam, "from");
+    const Value &countValue = find_value(oparam, "count");
     const Value &chainInfo = find_value(oparam, "chainInfo");
 
     bool includeChainInfo = false;
@@ -1413,6 +1403,8 @@ Value getaddressdeltas(const Array& params, bool fHelp)
 
     int start = 0;
     int end = 0;
+    int from = -1;
+    int count = -1;
 
     //if (startValue.isNum() && endValue.isNum()) {
     if (startValue.type() == int_type && endValue.type() == int_type) {
@@ -1424,6 +1416,20 @@ Value getaddressdeltas(const Array& params, bool fHelp)
         if (end < start) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "End value is expected to be greater than start");
         }
+    }
+
+    if (fromValue.type() == int_type && countValue.type() == int_type) {
+	    from = fromValue.get_int();
+	    //to = from + countValue.get_int();
+	    count = countValue.get_int();
+	    //if (from < 0 || to < 0) {
+	    if (from < 0 || count < 0) {
+		    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From and to is expected to be greater than zero");
+	    }
+	    if (end < start) {
+		    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "To value is expected to be greater than From");
+	    }
+	    //hasRange = true;
     }
 
     std::vector<std::pair<uint160, int> > addresses;
@@ -1450,6 +1456,8 @@ Value getaddressdeltas(const Array& params, bool fHelp)
     //UniValue deltas(UniValue::VARR);
     Array deltas;
 
+    InRangeArrayPush pushArrayInRange(deltas, from, count);
+
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++) {
         std::string address;
         if (!getAddressFromIndex(it->first.type, it->first.hashBytes, address)) {
@@ -1464,7 +1472,8 @@ Value getaddressdeltas(const Array& params, bool fHelp)
         delta.push_back(Pair("blockindex", (int)it->first.txindex));
         delta.push_back(Pair("height", it->first.blockHeight));
         delta.push_back(Pair("address", address));
-        deltas.push_back(delta);
+//        deltas.push_back(delta);
+	pushArrayInRange(delta);
     }
 
     //UniValue result(UniValue::VOBJ);
