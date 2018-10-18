@@ -35,6 +35,9 @@
 #include <limits.h>
 
 #include "sph_cubehash.h"
+#ifdef __cplusplus
+extern "C"{
+#endif
 
 #if SPH_SMALL_FOOTPRINT && !defined SPH_SMALL_FOOTPRINT_CUBEHASH
 #define SPH_SMALL_FOOTPRINT_CUBEHASH   1
@@ -715,4 +718,6 @@ sph_cubehash512_addbits_and_close(void *cc, unsigned ub, unsigned n, void *dst)
 	cubehash_close(cc, ub, n, dst, 16);
 	sph_cubehash512_init(cc);
 }
-
+#ifdef __cplusplus
+}
+#endif

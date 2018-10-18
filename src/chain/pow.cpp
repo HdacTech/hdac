@@ -161,6 +161,21 @@ static uint256 GetTargetPow(const CBlockIndex *pindexFirst,
     return (-work) / work;
 }
 
+unsigned int ReduceWorkTarget(const CBlockIndex* pindexPrev, int64_t scale) {
+    uint256 target;
+    target.SetCompact(pindexPrev->nBits);
+    target *= scale;
+
+    uint256 powLimit = Params().ProofOfWorkLimit();
+    if (target > powLimit) {
+        target = Params().ProofOfWorkLimit();
+    }
+
+    if(fDebug>1)LogPrintf("Reduce Difficulty: (%d)\n", GetDifficulty(target.GetCompact()));
+    
+    return target.GetCompact();
+}
+
 
 /**
  * Long range Difficulty Adjustment
@@ -191,6 +206,26 @@ unsigned int GetLDAWorkRequired(const CBlockIndex *pindexPrev,
         nextTarget = Params().ProofOfWorkLimit();
     }
 
+    do
+    {
+        if(pindexPrev->nHeight < (Params().GetStartHeightNewHashAlog() - 1))
+        {
+            break;
+        }
+        
+        if(pindexPrev->nHeight == (Params().GetStartHeightNewHashAlog() - 1))
+        {
+            return ReduceWorkTarget(pindexPrev, 100);
+        }
+        else if(pindexPrev->nHeight < (Params().GetStartHeightNewHashAlog() + LDA_TARGET_INTERVAL(TIME_XFACTOR)))
+        {
+            if(fDebug>1)LogPrintf("keep previous Difficulty( %d )\n", GetDifficulty(pindexPrev->nBits));
+            return pindexPrev->nBits;
+        }
+
+    }while(0);
+	
+        
     if(fDebug==1)LogPrintf("Set Difficulty: (%d)\n", GetDifficulty(nextTarget.GetCompact()));
 	if(fDebug>1)LogPrintf("--------------------------------------------------------------------\n");
     if(fDebug>1)LogPrintf("LDA RETARGET\n");
@@ -429,6 +464,25 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits,bool fNoErrorInLog)
     }
 
     return true;
+}
+
+bool CheckProofOfWork(uint256 hash, unsigned int nBits, unsigned int nVersion, unsigned int nHeight, bool fNoErrorInLog)
+{
+    if (Params().SkipProofOfWorkCheck())
+       return true;
+
+    if(nHeight >= Params().GetStartHeightNewHashAlog())
+    {
+        if(nVersion < 4)
+        {
+            
+            return error("CheckProofOfWork() : mismatched hash algorithm (nVersion:%d, nHeight:%d)");
+        }
+    }
+
+    return CheckProofOfWork(hash, nBits, fNoErrorInLog);
+
+    
 }
 
 uint256 GetBlockProof(const CBlockIndex& block)

@@ -19,6 +19,18 @@ extern unsigned int MAX_BLOCK_SIZE;                                             
 extern unsigned int MAX_BLOCK_SIGOPS;
 extern unsigned int MAX_TX_SIGOPS;
 
+typedef enum PowHashAlg
+{
+    POW_ALG_NONE          = 0,
+    POW_ALG_DEFALUT       = 1,
+
+    POW_ALG_LYRA2         = 3,
+    POW_ALG_SKUNK         = 4,
+    RESERVED_1            = 5,
+    RESERVED_2            = 6
+    
+}PowHashAlgType;
+
 /** Block signature hash types/flags */
 enum
 {
@@ -47,7 +59,7 @@ class CBlockHeader
 {
 public:
     // header
-    static const int32_t CURRENT_VERSION=3;
+    static const int32_t CURRENT_VERSION=4;
     int32_t nVersion;
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
@@ -90,7 +102,9 @@ public:
 
     uint256 GetHash() const;
 
-    uint256 GetPoWHash(int nHeight=-1, bool bLyra2REv2 = true) const;	// HDAC
+    uint256 GetPoWHash(int nHeight) const;
+	int GetHashAlog(const int version);
+	uint256 GetPoWHashWithAlg(int nHeight, const int algo) const;
 
     int64_t GetBlockTime() const
     {

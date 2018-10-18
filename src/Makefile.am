@@ -145,7 +145,14 @@ BITCOIN_CORE_H = \
   wallet/wallet_ismine.h \
   wallet/walletdb.h \
   compat/sanity.h
-  
+
+CRYPTO_COMMON = \
+  crypto/common/cubehash.c \
+  crypto/common/skein.c \
+  crypto/common/sph_cubehash.h \
+  crypto/common/sph_skein.h \
+  crypto/common/sph_types.h
+
 CRYPTO_LYRA2RE = \
   crypto/Lyra2RE/Lyra2RE.c \
   crypto/Lyra2RE/Lyra2RE.h \
@@ -159,15 +166,18 @@ CRYPTO_LYRA2RE = \
   crypto/Lyra2RE/sph_groestl.h \
   crypto/Lyra2RE/keccak.c \
   crypto/Lyra2RE/sph_keccak.h \
-  crypto/Lyra2RE/skein.c \
-  crypto/Lyra2RE/sph_skein.h \
-  crypto/Lyra2RE/cubehash.c \
-  crypto/Lyra2RE/sph_cubehash.h \
   crypto/Lyra2RE/bmw.c \
   crypto/Lyra2RE/sph_bmw.h \
-  crypto/Lyra2RE/sph_types.h \
   crypto/scrypt.cpp \
   crypto/scrypt.h 
+
+CRYPTO_SKUNK = \
+  crypto/skunk/fugue.c \
+  crypto/skunk/gost.c \
+  crypto/skunk/sph_fugue.h \
+  crypto/skunk/sph_gost.h \
+  crypto/skunk/sph_types.h \
+  crypto/skunk/skunk.h
 
 JSON_H = \
   json/json_spirit.h \
@@ -221,7 +231,9 @@ libbitcoin_server_a_SOURCES = \
   storage/txdb.cpp \
   chain/txmempool.cpp \
   chain/epow.cpp \
+  $(CRYPTO_COMMON) \
   $(CRYPTO_LYRA2RE) \
+  $(CRYPTO_SKUNK) \
   $(JSON_H) \
   $(BITCOIN_CORE_H)
 
@@ -312,7 +324,9 @@ libbitcoin_common_a_SOURCES = \
   script/sign.cpp \
   script/standard.cpp \
   script/script_error.cpp \
+  $(CRYPTO_COMMON) \
   $(CRYPTO_LYRA2RE) \
+  $(CRYPTO_SKUNK) \
   $(BITCOIN_CORE_H)
 
 # util: shared between all executables.
