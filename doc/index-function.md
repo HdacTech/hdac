@@ -30,6 +30,24 @@ hdac-cli hdac help <rpc call>
 * getspentinfo : txid로 지정한 거래에서 송금한 출력이 이후에 어떤 거래에서 사용되었는지를 조회할 수 있습니다.
 * getblockdeltas : 블록 내의 잔액 변동을 조회합니다.
 
+### 추가된 RPC 명령어 기능
+
+range-filter 기능
+
+from, count 파라미터를 추가 하여 기능을 구현 하였습니다.
+
+A 라는 RPC 명령어로 1000개의 결과가 출력 되었다면
+
+ex ) from = 52, count = 4 일 시
+1000개의 결과 중에 52번째 부터 4개의 결과만 보여 주겠다는 의미 입니다. 
+
+해당 기능이 추가 된 RPC 명령어는 아래와 같습니다.
+
+----------------------------------------------
+* getaddressutxos : 조회 된 utxos 값들에 대하여 range-filter 기능이 적용 되었다.
+* getaddressdeltas : 조회된 deltas 값들에 대하여 range-filter 기능이 적용 되었다.
+* getblockhashes : 조회된 HASH 값들에 대하여 range-filter 기능이 적용 되었다.
+
 ### rpc 명령 사용 방법
 #### getaddressmempool
 ```bash
@@ -71,6 +89,8 @@ Arguments:
       "address"  (string) The base58check encoded address
       ,...
     ],
+  "from"  (number) The staring index on found results
+  "count" (number) The number of items to show on found results
   "chainInfo"  (boolean) Include chain info with results
 }
 
@@ -87,6 +107,7 @@ Result
 ]
 
 Example : hdac-cli hdac getaddressutxos '{"addresses": ["HDFd45jQ1e6khUwojLd8ndFWa6QJd5ntVz"]}'
+Example : hdac-cli hdac getaddressutxos '{"addresses": ["HDFd45jQ1e6khUwojLd8ndFWa6QJd5ntVz"], "from": 52, "count": 4}'
 ```
 #### getaddressdeltas
 
@@ -102,6 +123,8 @@ Arguments:
     ]
   "start" (number) The start block height
   "end" (number) The end block height
+  "from"  (number) The staring index on found results
+  "count" (number) The number of items to show on found results
   "chainInfo" (boolean) Include chain info in results, only applies if start and end specified
 }
 
@@ -117,6 +140,7 @@ Result:
 ]
 
 Example : hdac-cli hdac getaddressdeltas '{"addresses": ["HDFd45jQ1e6khUwojLd8ndFWa6QJd5ntVz"]}'
+Example : hdac-cli hdac getaddressdeltas '{"addresses": ["HDFd45jQ1e6khUwojLd8ndFWa6QJd5ntVz"], "from": 52, "count": 4}'
 ```
 #### getaddresstxids
 
@@ -132,6 +156,8 @@ Arguments:
     ]
   "start" (number) The start block height
   "end" (number) The end block height
+  "from"  (number) The staring index on found results
+  "count" (number) The number of items to show on found results
 }
 
 Result:
@@ -141,6 +167,7 @@ Result:
 ]
 
 Example: hdac-cli hdac getaddresstxids '{"addresses": ["HDFd45jQ1e6khUwojLd8ndFWa6QJd5ntVz"]}'
+Example: hdac-cli hdac getaddresstxids '{"addresses": ["HDFd45jQ1e6khUwojLd8ndFWa6QJd5ntVz"], "from": 52, "count": 4}'
 ```
 #### getaddressbalance
 
@@ -176,6 +203,8 @@ Arguments:
     {
       "noOrphans":true   (boolean) will only include blocks on the main chain
       "logicalTimes":true   (boolean) will include logical timestamps with hashes
+      "from"  (number) The staring index on found results
+      "count" (number) The number of items to show on found results
     }
 
 Result:
@@ -190,6 +219,7 @@ Result:
 ]
 
 Examples: hdac-cli hdac getblockhashes 1231614698 1231024505
+Examples: hdac-cli hdac getblockhashes 1231614698 1231024505 '{"from": 52, "count": 4}'
 
 ```
 #### getspentinfo
