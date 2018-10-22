@@ -94,6 +94,7 @@ public:
     int GetStartHeightChBlockSigner() const { return nStartHeightChBlockSigner; }
 	
 	int GetStartHeightBlockRewardAdj() const { return nStartHeightBlockRewardAdj; }
+    int GetStartHeightNewHashAlog() const { return nStartHeightNewHashAlog; }
     #endif
     
 protected:
@@ -140,6 +141,8 @@ protected:
 
     // Block reward value ajust from 5000 to 2500 after 150000 block, 
     int nStartHeightBlockRewardAdj;
+    // Block height at which the new hash-algorithm is active
+    int nStartHeightNewHashAlog;
     #endif
 };
 

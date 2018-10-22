@@ -1609,7 +1609,7 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos, int nHeight)	// 
     }
 
     // Check the header
-    if (!CheckProofOfWork(block.GetPoWHash(nHeight), block.nBits))	// HDAC
+    if (!CheckProofOfWork(block.GetPoWHash(nHeight), block.nBits, block.nVersion, nHeight))
         return error("ReadBlockFromDisk : Errors in block header");
 
     return true;
@@ -3986,7 +3986,7 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
     }
 
     // Check proof of work matches claimed amount
-    if (fCheckPOW && !CheckProofOfWork(block.GetPoWHash(nHeight), block.nBits))	// HDAC
+    if (fCheckPOW && !CheckProofOfWork(block.GetPoWHash(nHeight), block.nBits, block.nVersion, nHeight))
         return state.DoS(50, error("CheckBlockHeader() : proof of work failed"),
                          REJECT_INVALID, "high-hash");
 

@@ -193,11 +193,13 @@ Value setgenerate(const Array& params, bool fHelp)
                 LOCK(cs_main);
                 IncrementExtraNonce(pblock, pindexPrev, nExtraNonce,pwalletMain);	// multichain 1.0.2.1
             }
-            while (!CheckProofOfWork(pblock->GetPoWHash(), pblock->nBits, true)) {
+            
+            while (!CheckProofOfWork(pblock->GetPoWHash(nHeight+1), pblock->nBits, pblock->nVersion, nHeight+1, true)) {
                 // Yes, there is a chance every nonce could fail to satisfy the -regtest
                 // target -- 1 in 2^(2^32). That ain't gonna happen.
                 ++pblock->nNonce;
             }
+            
             CValidationState state;
             if(fDebug>0)LogPrintf("RPC Miner      : Block Found - %s, prev: %s, height: %d, txs: %d\n",
                     pblock->GetHash().GetHex(),pblock->hashPrevBlock.ToString().c_str(),nHeight+1,(int)pblock->vtx.size());

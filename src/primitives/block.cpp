@@ -10,38 +10,96 @@
 #include "utils/tinyformat.h"
 #include "utils/utilstrencodings.h"
 
+#include "crypto/skunk/skunk.h"
+#include "chainparams/chainparams.h"
+#include "utils/util.h"
+
 uint256 CBlockHeader::GetHash() const
 {
+    if(nVersion > 3)
+    {
+        return SkunkHash(BEGIN(nVersion), END(nNonce));
+    }
+    
     return Hash(BEGIN(nVersion), END(nNonce));
 }
 
-uint256 CBlockHeader::GetPoWHash(int nHeight, bool bLyra2REv2) const
+uint256 CBlockHeader::GetPoWHash(int nHeight) const
 {
     uint256 thash;
 
-    if(nHeight<0)
+    if(nHeight == 0)
     {
-    	if(bLyra2REv2){
-			lyra2re2_hash(BEGIN(nVersion), BEGIN(thash));
-		}
-		else{
-			thash = Hash(BEGIN(nVersion), END(nNonce));
-		}
-		return thash;
-    }
-    else if (nHeight==0)
-    {
-    	bLyra2REv2 = false;
+        return Hash(BEGIN(nVersion), END(nNonce));
     }
 
-    if(bLyra2REv2){
+    if(nHeight >= Params().GetStartHeightNewHashAlog())
+    {
+        return SkunkHash(BEGIN(nVersion), END(nNonce));
+    }
+    else
+    {
         lyra2re2_hash(BEGIN(nVersion), BEGIN(thash));
     }
-    else{
-    	thash = Hash(BEGIN(nVersion), END(nNonce));
-    }
+
     return thash;
 }
+
+
+int GetHashAlog(const int version)
+{
+    PowHashAlgType algtype;
+    
+    switch(version)
+    {
+        case 3:
+          algtype = POW_ALG_LYRA2;
+          break;
+        case 4:
+          algtype = POW_ALG_SKUNK;
+          break;
+        defalut:
+          algtype = POW_ALG_DEFALUT;
+          break;
+    }
+
+    return (int)algtype;
+}
+
+uint256 CBlockHeader::GetPoWHashWithAlg(int nHeight, const int algo) const
+{
+    uint256 thash;
+    PowHashAlgType algtype = (PowHashAlgType)algo;
+
+	do
+    {
+        if(nHeight == 0)// Genesis block
+        {
+            thash = Hash(BEGIN(nVersion), END(nNonce));
+            break;
+        }
+    
+        switch(algtype)
+        {
+            case POW_ALG_LYRA2:
+                lyra2re2_hash(BEGIN(nVersion), BEGIN(thash));
+                break;
+    
+            case POW_ALG_SKUNK:
+                thash = SkunkHash(BEGIN(nVersion), END(nNonce));
+                break;
+    
+            default:
+                thash = Hash(BEGIN(nVersion), END(nNonce));
+                break;
+        }
+        
+    }while(0);
+	
+
+    return thash;
+}
+
 
 uint256 CBlock::BuildMerkleTree(bool* fMutated) const
 {
