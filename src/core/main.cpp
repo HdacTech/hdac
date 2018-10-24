@@ -1609,7 +1609,7 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos, int nHeight)	// 
     }
 
     // Check the header
-    if (!CheckProofOfWork(block.GetPoWHash(nHeight), block.nBits))	// HDAC
+    if (!CheckProofOfWork(block.GetPoWHash(nHeight), block.nBits, block.nVersion, nHeight))
         return error("ReadBlockFromDisk : Errors in block header");
 
     return true;
@@ -1707,6 +1707,12 @@ boost::filesystem::path GetBlacklistFilename(const char *prefix)
 CAmount GetBlockValue(int nHeight, const CAmount& nFees) //HH
 {
     CAmount nSubsidy = MCP_INITIAL_BLOCK_REWARD;// * COIN
+
+	//Block Reward adjustment.
+    if(nHeight >= Params().GetStartHeightBlockRewardAdj())
+    {
+    	nSubsidy = nSubsidy / 2; 
+    }
 
     if(nHeight < 16801 && MCP_FIRST_BLOCK_REWARD != 0)
     {
@@ -3980,7 +3986,7 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
     }
 
     // Check proof of work matches claimed amount
-    if (fCheckPOW && !CheckProofOfWork(block.GetPoWHash(nHeight), block.nBits))	// HDAC
+    if (fCheckPOW && !CheckProofOfWork(block.GetPoWHash(nHeight), block.nBits, block.nVersion, nHeight))
         return state.DoS(50, error("CheckBlockHeader() : proof of work failed"),
                          REJECT_INVALID, "high-hash");
 

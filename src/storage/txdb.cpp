@@ -428,9 +428,9 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nStatus        = diskindex.nStatus;
                 pindexNew->nTx            = diskindex.nTx;
 
-                //if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits))
-                if (!CheckProofOfWork(pindexNew->GetPoWBlockHash(), pindexNew->nBits))	// HDAC
-                    return error("LoadBlockIndex() : CheckProofOfWork failed: %s", pindexNew->ToString());
+                if (!CheckProofOfWork(pindexNew->GetPoWBlockHash(), pindexNew->nBits, pindexNew->nVersion, pindexNew->nHeight))	// HDAC
+                    return error("LoadBlockIndex() : CheckProofOfWork failed: %s, ver:%d, bh:%d", 
+                                              pindexNew->ToString(), pindexNew->nVersion, pindexNew->nHeight);
 
                 pcursor->Next();
             } else {

@@ -34,10 +34,10 @@
 #include <stdio.h>
 #include "sph_blake.h"
 #include "sph_groestl.h"
-#include "sph_cubehash.h"
+#include "crypto/common/sph_cubehash.h"
 #include "sph_bmw.h"
 #include "sph_keccak.h"
-#include "sph_skein.h"
+#include "crypto/common/sph_skein.h"
 #include "Lyra2.h"
 
 void lyra2re_hash(const char* input, char* output)

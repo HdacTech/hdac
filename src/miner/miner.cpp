@@ -304,6 +304,25 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,CWallet *pwallet,CP
                 
         CBlockIndex* pindexPrev = chainActive.Tip();
         const int nHeight = pindexPrev->nHeight + 1;
+
+        if(chainActive.Tip()!=NULL)
+        {
+            /*
+               genesis  :1
+               lyra2re2 :3
+               skunk    :4
+            */
+            if(nHeight >= Params().GetStartHeightNewHashAlog())
+            {
+                pblock->nVersion = 4;
+            }
+            else if(nHeight > 0)
+            {
+                 pblock->nVersion = 3;
+            }
+            
+        }
+        
         if(ppPrev)	// multichain 1.0.2.1
         {
         	*ppPrev=pindexPrev;
@@ -681,8 +700,7 @@ bool static ScanHash(const CBlockHeader *pblock, uint32_t& nNonce, uint256 *phas
 }
 #endif
 
-/* HDAC START */
-bool static ScanHashWithLyra(const CBlockHeader *pblock, uint32_t& nNonce, uint256 *phash,uint16_t success_and_mask)
+bool static ScanHashWithAlg(const CBlockHeader *pblock, uint32_t& nNonce, uint256 *phash,uint16_t success_and_mask)
 {
     CBlockHeader block = *pblock;
     while (true) {
@@ -699,7 +717,8 @@ bool static ScanHashWithLyra(const CBlockHeader *pblock, uint32_t& nNonce, uint2
         //    return true;
 
         block.nNonce = nNonce;
-        *phash = block.GetPoWHash(true);
+
+        *phash = block.GetPoWHash(chainActive.Tip()->nHeight+1);
         //fpow = CheckProofOfWork(*phash, pblock->nBits, true);
         if( (((uint16_t*)phash)[15] & success_and_mask) == 0)
         {
@@ -713,7 +732,7 @@ bool static ScanHashWithLyra(const CBlockHeader *pblock, uint32_t& nNonce, uint2
             boost::this_thread::interruption_point();
     }
 }
-/* HDAC END */
+
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
@@ -1389,8 +1408,9 @@ void static BitcoinMiner(CWallet *pwallet)
                         break;
                     }
                 }
+
+                bool fFound = ScanHashWithAlg(pblock, nNonce, &hash, success_and_mask);
                 
-                bool fFound = ScanHashWithLyra(pblock, nNonce, &hash, success_and_mask);	// HDAC
                 uint32_t nHashesDone = nNonce - nOldNonce;
                 nOldNonce = nNonce;
 
@@ -1403,7 +1423,8 @@ void static BitcoinMiner(CWallet *pwallet)
                     {
                         // Found a solution
                         pblock->nNonce = nNonce;
-                        assert(hash == pblock->GetPoWHash()); // HDAC
+
+                        assert(hash == pblock->GetPoWHash(chainActive.Tip()->nHeight+1));
 
                         SetThreadPriority(THREAD_PRIORITY_NORMAL);
 

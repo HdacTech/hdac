@@ -8,6 +8,7 @@
 #include "core/main.h"
 #include "rpc/rpcserver.h"
 #include "rpc/rpcserver.h"
+#include "rpc/InRangeArrayPush.h"
 #include "utils/sync.h"
 #include "utils/util.h"
 
@@ -200,7 +201,8 @@ Value blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
                     } else {
                         continue;
                     }
-                   delta.push_back(Pair("satoshis", -1 * spentInfo.satoshis));
+//                   delta.push_back(Pair("satoshis", -1 * spentInfo.satoshis));
+                   delta.push_back(Pair("qty", ValueFromAmount(-1 * spentInfo.satoshis)));
                     delta.push_back(Pair("index", (int)j));
                     delta.push_back(Pair("prevtxid", input.prevout.hash.GetHex()));
                     delta.push_back(Pair("prevout", (int)input.prevout.n));
@@ -235,7 +237,8 @@ Value blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
                 continue;
             }
 
-            delta.push_back(Pair("satoshis", out.nValue));
+//            delta.push_back(Pair("satoshis", out.nValue));
+            delta.push_back(Pair("qty", ValueFromAmount(out.nValue)));
             delta.push_back(Pair("index", (int)k));
 
             outputs.push_back(delta);
@@ -426,6 +429,8 @@ Value getblockhashes(const Array& params, bool fHelp)
             "    {\n"
             "      \"noOrphans\":true   (boolean) will only include blocks on the main chain\n"
             "      \"logicalTimes\":true   (boolean) will include logical timestamps with hashes\n"
+            "      \"from\"  (number) The staring index on found results\n"
+            "      \"count\" (number) The number of items to show on found results\n"
             "    }\n"
             "\nResult:\n"
             "[\n"
@@ -447,6 +452,8 @@ Value getblockhashes(const Array& params, bool fHelp)
     unsigned int low = params[1].get_int();
     bool fActiveOnly = false;
     bool fLogicalTS = false;
+    int from = -1;
+    int count = -1;
 
     if (params.size() > 2) {
         //if (params[2].isObject()) {
@@ -455,6 +462,8 @@ Value getblockhashes(const Array& params, bool fHelp)
             //UniValue returnLogical = find_value(params[2].get_obj(), "logicalTimes");
             Value noOrphans = find_value(params[2].get_obj(), "noOrphans");
             Value returnLogical = find_value(params[2].get_obj(), "logicalTimes");
+	    Value fromValue = find_value(params[2].get_obj(), "from");
+	    Value countValue = find_value(params[2].get_obj(), "count");
 
             //if (noOrphans.isBool())
             if (noOrphans.type() == bool_type)
@@ -463,6 +472,18 @@ Value getblockhashes(const Array& params, bool fHelp)
             //if (returnLogical.isBool())
             if (returnLogical.type() == bool_type)
                 fLogicalTS = returnLogical.get_bool();
+
+	    if (fromValue.type() == int_type && countValue.type() == int_type) {
+		from = fromValue.get_int();
+		//to = from + countValue.get_int();
+		count = countValue.get_int();
+
+		//if (from < 0 || to < 0) {
+		if (from < 0 || count < 0) {
+		    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From and to is expected to be greater than zero");
+		}
+		//hasRange = true;
+	    }
         }
     }
 
@@ -478,15 +499,19 @@ Value getblockhashes(const Array& params, bool fHelp)
     //UniValue result(UniValue::VARR);
     Array result;
 
+    InRangeArrayPush pushArrayInRange(result, from, count);
+
     for (std::vector<std::pair<uint256, unsigned int> >::const_iterator it=blockHashes.begin(); it!=blockHashes.end(); it++) {
         if (fLogicalTS) {
             //UniValue item(UniValue::VOBJ);
             Object item;
             item.push_back(Pair("blockhash", it->first.GetHex()));
             item.push_back(Pair("logicalts", (int)it->second));
-            result.push_back(item);
+//            result.push_back(item);
+	    pushArrayInRange(item);
         } else {
-            result.push_back(it->first.GetHex());
+//            result.push_back(it->first.GetHex());
+	    pushArrayInRange(it->first.GetHex());
         }
     }
 
@@ -500,13 +525,7 @@ Value getblockdeltas(const Array& params, bool fHelp)
             "getblockdeltas\n"
             "\nReturns all changes for an block.\n"
             "\nArguments:\n"
-            "{\n"
-            "  \"hash\"\n"
-            "    [\n"
-            "      \"hash\"  (string) The block hash\n"
-            "      ,...\n"
-            "    ]\n"
-            "}\n"
+            "1. \"hash\"  (string) The block hash\n"
             "\nResult:\n"
             "[\n"
             "  {\n"
@@ -528,14 +547,11 @@ Value getblockdeltas(const Array& params, bool fHelp)
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getblockdeltas", "'{\"hash\": [\"ee7af6dd4969a2c3c5ae525d29a926212e240bde26c4f54de16cf8bfeedb6a2d\"]}'")
-            + HelpExampleRpc("getblockdeltas", "{\"hash\": [\"ee7af6dd4969a2c3c5ae525d29a926212e240bde26c4f54de16cf8bfeedb6a2d\"]}")
+            + HelpExampleCli("getblockdeltas", "\"ee7af6dd4969a2c3c5ae525d29a926212e240bde26c4f54de16cf8bfeedb6a2d\"")
+            + HelpExampleRpc("getblockdeltas", "\"ee7af6dd4969a2c3c5ae525d29a926212e240bde26c4f54de16cf8bfeedb6a2d\"")
         );
 
-//    std::string strHash = params[0].get_str();
-    Object oparam = params[0].get_obj();
-    const Value &blockHash = find_value(oparam, "hash");
-    std::string strHash = blockHash.get_str();
+    std::string strHash = params[0].get_str();
     uint256 hash(strHash);
 
     if (mapBlockIndex.count(hash) == 0)
