@@ -40,3 +40,6 @@
 
 # - ver:1.08.5
 # 20181023 - add the functions for addressindex
+
+# - ver:1.08.6
+# 20181024 - fix the problem of handling rpc params
