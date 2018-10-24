@@ -301,9 +301,6 @@ CRPCConvertTable::CRPCConvertTable()
         members.insert(std::make_pair(vRPCConvertParams[i].methodName,
                                       vRPCConvertParams[i].paramIdx));
     }
-//    for (std::set<std::pair<std::string, int> >::iterator i = members.begin(); i != members.end(); i++) {
-//        std::cout << i->first << ", " << i->second << std::endl;
-//    }
 }
 
 static CRPCConvertTable rpcCvtTable;
@@ -366,10 +363,10 @@ CRPCConvertTableMayBeString::CRPCConvertTableMayBeString()
     const unsigned int n_elem =
         (sizeof(vRPCConvertParamsMayBeString) / sizeof(vRPCConvertParamsMayBeString[0]));
 
-//    for (unsigned int i = 0; i < n_elem; i++) {
-//        members.insert(std::make_pair(vRPCConvertParamsMayBeString[i].methodName,
-//                                      vRPCConvertParamsMayBeString[i].paramIdx));
-//    }
+    for (unsigned int i = 0; i < n_elem; i++) {
+        members.insert(std::make_pair(vRPCConvertParamsMayBeString[i].methodName,
+                                      vRPCConvertParamsMayBeString[i].paramIdx));
+    }
 }
 
 static CRPCConvertTableMayBeString rpcCvtTableMayBeString;
