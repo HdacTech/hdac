@@ -7,6 +7,10 @@
 #ifndef BITCOIN_SERIALIZE_H
 #define BITCOIN_SERIALIZE_H
 
+#ifdef WIN32
+#include <compat/endian.h>
+#endif
+
 #include <algorithm>
 #include <assert.h>
 #include <ios>
