@@ -476,7 +476,7 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, unsigned int nVersion, u
         if(nVersion < 4)
         {
             
-            return error("CheckProofOfWork() : mismatched hash algorithm (nVersion:%d, nHeight:%d)");
+            return error("CheckProofOfWork() : mismatched hash algorithm");
         }
     }
 

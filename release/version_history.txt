@@ -38,3 +38,8 @@
 # - ver:1.08.0
 # 20181015 - Default hash algorithm changed from lyra2rev2 to skunk
 
+# - ver:1.08.5
+# 20181023 - add the functions for addressindex
+
+# - ver:1.08.6
+# 20181024 - fix the problem of handling rpc params
