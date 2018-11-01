@@ -13,6 +13,8 @@
 
 #include <boost/thread.hpp>
 
+#include <structs/base58.h>
+
 using namespace std;
 
 void static BatchWriteCoins(CLevelDBBatch &batch, const uint256 &hash, const CCoins &coins) {
@@ -240,11 +242,82 @@ bool CBlockTreeDB::ReadAddressUnspentIndex(uint160 addressHash, int type, std::v
     return true;
 }
 
+
+//size_t txdb_totalAddressCount = 0;
+//std::set<std::string> txdb_walletAddresses;
+
+void CBlockTreeDB::walletAddresses(std::set<string> &walletAddresses)
+{    
+    using namespace std;
+
+    //std::set<std::string> walletAddresses;
+    boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
+    CDataStream ssKeySet(SER_DISK, CLIENT_VERSION);
+    ssKeySet << 'w';
+    pcursor->Seek(ssKeySet.str());
+
+    while (pcursor->Valid()) {
+        boost::this_thread::interruption_point();
+        try {
+            leveldb::Slice slKey = pcursor->key();
+            CDataStream ssKey(slKey.data(), slKey.data()+slKey.size(), SER_DISK, CLIENT_VERSION);
+            char type;
+            string key;
+            ssKey >> type;
+            ssKey >> key;
+            //if (chType == DB_ADDRESSINDEX && indexKey.hashBytes == addressHash) {
+            size_t found = key.find_first_of("Addr");
+            if (found != string::npos && found == 0) {
+                leveldb::Slice slValue = pcursor->value();
+                CDataStream ssValue(slValue.data(), slValue.data()+slValue.size(), SER_DISK, CLIENT_VERSION);
+                string addr;
+                ssValue >> addr;
+                pair<set<string>::iterator, bool> insRet = walletAddresses.insert(addr);
+                assert(insRet.second == true);
+                pcursor->Next();
+            } else {
+                break;
+            }
+        } catch (const std::exception& e) {
+            break;
+        }
+    }
+    //return txdb_walletAddresses;
+    //return walletAddresses;
+}
+
+void CBlockTreeDB::loadIndexedAddresses()
+{
+    walletAddresses(mWalletAddresses);
+}
+
+bool CBlockTreeDB::updateIndexedAddress(const CAddressIndexKey& addressKey)
+{
+    using namespace std;
+    CLevelDBBatch batch;
+    string address;
+
+    if (addressKey.type == 2) {
+        address = CBitcoinAddress(CScriptID(addressKey.hashBytes)).ToString();
+    } else if (addressKey.type == 1) {
+        address = CBitcoinAddress(CKeyID(addressKey.hashBytes)).ToString();
+    }
+    pair<set<string>::iterator, bool> ret = mWalletAddresses.insert(address);
+    if (ret.second == true) {        
+        ostringstream key;
+        key << "Addr" << mWalletAddresses.size() - 1;
+        //string test = key.str();
+        batch.Write(make_pair('w', key.str()), address);
+    }
+    return WriteBatch(batch);
+}
+
 bool CBlockTreeDB::WriteAddressIndex(const std::vector<std::pair<CAddressIndexKey, CAmount> > &vect)
 {
     CLevelDBBatch batch;
-    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=vect.begin(); it!=vect.end(); it++)
+    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=vect.begin(); it!=vect.end(); it++) {
         batch.Write(make_pair('d', it->first), it->second);
+    }
     return WriteBatch(batch);
 }
 

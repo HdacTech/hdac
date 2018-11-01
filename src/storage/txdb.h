@@ -81,6 +81,13 @@ public:
     bool ReadFlag(const std::string &name, bool &fValue);
     bool LoadBlockIndexGuts();
     bool blockOnchainActive(const uint256 &hash);
+
+    bool updateIndexedAddress(const CAddressIndexKey& addressKey);
+    void walletAddresses(std::set<std::string>& walletAddresses);
+    void loadIndexedAddresses();
+
+private:
+    std::set<std::string> mWalletAddresses;
 };
 
 #endif // BITCOIN_TXDB_H

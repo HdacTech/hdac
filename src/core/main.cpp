@@ -97,6 +97,7 @@ bool fImporting = false;
 bool fReindex = false;
 bool fTxIndex = false;
 bool fAddressIndex = false;
+bool fGatherAddr = false;
 bool fTimestampIndex = false;
 bool fSpentIndex = false;
 bool fIsBareMultisigStd = true;
@@ -2621,6 +2622,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             return AbortNode(state, "Failed to write address index");
         }
 
+        if (fGatherAddr) {
+            for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++) {
+                pblocktree->updateIndexedAddress(it->first);
+            }
+        }
+
         if (!pblocktree->UpdateAddressUnspentIndex(addressUnspentIndex)) {
             return AbortNode(state, "Failed to write address unspent index");
         }
@@ -4867,6 +4874,10 @@ bool static LoadBlockIndexDB()
     pblocktree->ReadFlag("addressindex", fAddressIndex);
     LogPrintf("%s: address index %s\n", __func__, fAddressIndex ? "enabled" : "disabled");
 
+    // Check whether we have an address index
+    pblocktree->ReadFlag("gatheraddr", fGatherAddr);
+    LogPrintf("%s: gather address %s\n", __func__, fGatherAddr ? "enabled" : "disabled");
+
     // Check whether we have a timestamp index
     pblocktree->ReadFlag("timestampindex", fTimestampIndex);
     LogPrintf("%s: timestamp index %s\n", __func__, fTimestampIndex ? "enabled" : "disabled");
@@ -5070,6 +5081,9 @@ bool LoadBlockIndex()
     // Load block index from databases
     if (!fReindex && !LoadBlockIndexDB())
         return false;
+    if (fAddressIndex && fGatherAddr) {
+        pblocktree->loadIndexedAddresses();
+    }
     return true;
 }
 
@@ -5088,6 +5102,10 @@ bool InitBlockIndex() {
     // Use the provided setting for -addressindex in the new database
     fAddressIndex = GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX);
     pblocktree->WriteFlag("addressindex", fAddressIndex);
+
+    // Use the provided setting for -addressindex in the new database
+    fGatherAddr = GetBoolArg("-gatheraddr", DEFAULT_GATHERADDR);
+    pblocktree->WriteFlag("gatheraddr", fGatherAddr);
 
     // Use the provided setting for -timestampindex in the new database
     fTimestampIndex = GetBoolArg("-timestampindex", DEFAULT_TIMESTAMPINDEX);

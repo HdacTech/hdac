@@ -130,6 +130,7 @@ static const CRPCCommand vRPCCommands[] =
     { "addressindex",       "getaddressdeltas",       &getaddressdeltas,       false,     false,      false  },
     { "addressindex",       "getaddresstxids",        &getaddresstxids,        false,     false,      false  },
     { "addressindex",       "getaddressbalance",      &getaddressbalance,      false,     false,      false  },
+    { "addressindex",       "getindexedaddresses",    &getindexedaddresses,    false,     false,      false  },
 
     /* Utility functions */
     { "util",               "createkeypairs",         &createkeypairs,         true,      true ,      false },

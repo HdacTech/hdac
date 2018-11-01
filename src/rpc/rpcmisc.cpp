@@ -34,6 +34,7 @@ std::string SetLockedBlock(std::string hash);
 #include "json/json_spirit_value.h"
 
 #include "chain/addressindex.h"
+#include <storage/txdb.h>
 
 using namespace boost;
 using namespace boost::assign;
@@ -1508,6 +1509,36 @@ Value getaddressdeltas(const Array& params, bool fHelp)
     } else {
         return deltas;
     }
+}
+
+const std::set<std::string> walletAddresses();
+Value getindexedaddresses(const Array& params, bool fHelp)
+{
+    using namespace std;
+    if (fHelp || params.size() != 0)
+        throw runtime_error(
+            "getindexedaddresses\n"
+            "\nReturns the indexed address(es) (requires addressindex to be enabled).\n"
+            "\nResult:\n"
+            "{\n"
+            "  [ \n"
+            "   \"addresses\"  (string) The current balance in satoshis\n"
+            "    ,... \n"
+            "  ] \n"
+            "}\n"
+        );
+
+    //set<string> addrs = walletAddresses();
+    set<string> addrs;
+    pblocktree->walletAddresses(addrs);
+
+    Array result;
+
+    for (set<string>::const_iterator it=addrs.begin(); it!=addrs.end(); it++) {
+        result.push_back(*it);
+    }
+
+    return result;
 }
 
 Value getaddressbalance(const Array& params, bool fHelp)

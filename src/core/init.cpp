@@ -334,6 +334,7 @@ std::string HelpMessage(HelpMessageMode mode)                                   
     strUsage += "  -addressindex          " + strprintf(_("Maintain a full address index, used to query for the balance, txids and unspent outputs for addresses (default: %u)"), DEFAULT_ADDRESSINDEX) + "\n";
     strUsage += "  -timestampindex        " + strprintf(_("Maintain a timestamp index for block hashes, used to query blocks hashes by a range of timestamps (default: %u)"), DEFAULT_TIMESTAMPINDEX) + "\n";
     strUsage += "  -spentindex            " + strprintf(_("Maintain a full spent index, used to query the spending txid and input index for an outpoint (default: %u)"), DEFAULT_SPENTINDEX) + "\n";
+    strUsage += "  -gatheraddr            " + strprintf(_("Gather addresses with addressindex switched on (default: %u)"), DEFAULT_GATHERADDR) + "\n";
 
     strUsage += "\n" + _("Connection options:") + "\n";
     strUsage += "  -addnode=<ip>          " + _("Add a node to connect to and attempt to keep the connection open") + "\n";

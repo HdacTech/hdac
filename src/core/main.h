@@ -98,8 +98,8 @@ static const unsigned int DATABASE_WRITE_INTERVAL = 3600;
 /** Maximum length of reject messages. */
 static const unsigned int MAX_REJECT_MESSAGE_LENGTH = 111;
 
-// MYJOB : implement
 static const bool DEFAULT_ADDRESSINDEX = false;
+static const bool DEFAULT_GATHERADDR = false;
 static const bool DEFAULT_TIMESTAMPINDEX = false;
 static const bool DEFAULT_SPENTINDEX = false;
 //static const unsigned int DEFAULT_DB_MAX_OPEN_FILES = 1000;
