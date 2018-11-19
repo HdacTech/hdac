@@ -1358,6 +1358,15 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         if (GetBoolArg("-relaypriority", true) && nFees < ::minRelayTxFee.GetFee(nSize) && !AllowFree(view.GetPriority(tx, chainActive.Height() + 1))) {
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient priority");
         }
+
+        if(MIN_RELAY_TX_FEE != 0)
+        {
+            if (fRejectInsaneFee && nFees > ::minRelayTxFee.GetFee(nSize) * 10000)
+                return state.DoS(0, error("AcceptToMemoryPool: : insane fees %s, %d > %d",
+                                hash.ToString(),
+                                nFees, ::minRelayTxFee.GetFee(nSize) * 10000),
+                                REJECT_INVALID,"Insane fees");
+        }
                
         unsigned int scriptVerifyFlags = STANDARD_SCRIPT_VERIFY_FLAGS;
         if (!Params().RequireStandard()) 

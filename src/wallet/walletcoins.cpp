@@ -1111,6 +1111,7 @@ bool CalculateChangeAmounts(CWallet *lpWallet,                                  
                         if(usedAddresses->count(addressRet) == 0)
                         {
                             usedAddresses->insert(addressRet);
+                            if(fDebug>1) LogPrintf(" %s usedaddr %s \n",__func__,CBitcoinAddress(addressRet).ToString().c_str());       
                         }
                     }                                            
                 }
@@ -1186,6 +1187,8 @@ bool FindChangeAddress(CWallet *lpWallet,CTxDestination& address,const set<CTxDe
         
         if(addresses)
         {
+            if(fDebug>1) LogPrintf("[FindChangeAddress] addresses size = %d \n", addresses->size());
+			
             if(addresses->size() == 1)
             {
                 address=*addresses->begin();
@@ -1213,6 +1216,7 @@ bool FindChangeAddress(CWallet *lpWallet,CTxDestination& address,const set<CTxDe
                     if(!lpWallet->GetKeyFromAddressBook(vchPubKey,MC_PTP_RECEIVE,addresses))
                     {
                         change_address_found=false;
+                        if(fDebug>1) LogPrintf("[FindChangeAddress] change_address_found = %d \n", change_address_found);
                     }
                 }
             }
@@ -1221,7 +1225,24 @@ bool FindChangeAddress(CWallet *lpWallet,CTxDestination& address,const set<CTxDe
         {
             address=vchPubKey.GetID();
         }
-        else
+        else 
+        {
+            BOOST_FOREACH(const CTxDestination& scr_address, *addresses)
+            {  
+                const unsigned char* aptr=GetAddressIDPtr(scr_address);
+				if(aptr && !change_address_found)
+                {
+                    if(mc_gState->m_Permissions->CanReceive(NULL,aptr))
+                    {
+                        address = scr_address;
+                        change_address_found=true;
+                        if(fDebug>1) LogPrintf("[FindChangeAddress] change_address_found = %d \n", change_address_found);
+                    }
+                }
+            }    
+        }
+
+        if(!change_address_found)
         {
             address=CNoDestination();
         }        
