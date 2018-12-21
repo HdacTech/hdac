@@ -95,6 +95,7 @@ public:
 	
 	int GetStartHeightBlockRewardAdj() const { return nStartHeightBlockRewardAdj; }
     int GetStartHeightNewHashAlog() const { return nStartHeightNewHashAlog; }
+    int GetStartHeightBlockRewardAdj2nd() const { return nStartHeightBlockRewardAdj2nd; }
     #endif
     
 protected:
@@ -143,6 +144,8 @@ protected:
     int nStartHeightBlockRewardAdj;
     // Block height at which the new hash-algorithm is active
     int nStartHeightNewHashAlog;
+    // Block reward value ajust from 2500 to 500 after 183400 block, 
+    int nStartHeightBlockRewardAdj2nd;
     #endif
 };
 

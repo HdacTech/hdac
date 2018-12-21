@@ -222,7 +222,21 @@ unsigned int GetLDAWorkRequired(const CBlockIndex *pindexPrev,
             if(fDebug>1)LogPrintf("keep previous Difficulty( %d )\n", GetDifficulty(pindexPrev->nBits));
             return pindexPrev->nBits;
         }
-
+		
+        if(pindexPrev->nHeight < (Params().GetStartHeightBlockRewardAdj2nd() - 1))
+        {
+            break;
+        }
+        
+        if(pindexPrev->nHeight == (Params().GetStartHeightBlockRewardAdj2nd() - 1))
+        {
+            return ReduceWorkTarget(pindexPrev, 10);
+        }
+        else if(pindexPrev->nHeight < (Params().GetStartHeightBlockRewardAdj2nd() + LDA_TARGET_INTERVAL(TIME_XFACTOR)))
+        {
+            if(fDebug>1)LogPrintf("keep previous Difficulty( %d )\n", GetDifficulty(pindexPrev->nBits));
+            return pindexPrev->nBits;
+        }
     }while(0);
 	
         

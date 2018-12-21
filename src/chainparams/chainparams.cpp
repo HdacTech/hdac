@@ -587,6 +587,9 @@ public:
 
         // [hard fork] expected date2018/10/22 ~ 
         nStartHeightNewHashAlog = 151880;
+
+        // [hard fork] expected date 2019/12/27 ~
+        nStartHeightBlockRewardAdj2nd = 183400;
         #endif
     }
     

@@ -43,3 +43,6 @@
 
 # - ver:1.08.6
 # 20181024 - fix the problem of handling rpc params
+
+# - ver:1.09.0
+# 20181221 - changed Block reward value from 2500 to 500.
