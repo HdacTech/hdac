@@ -46,3 +46,6 @@
 
 # - ver:1.09.0
 # 20181221 - changed Block reward value from 2500 to 500.
+
+# - ver:1.10.0
+# 20190906 - add rpc command fundrawtransaction

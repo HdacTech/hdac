@@ -9,6 +9,8 @@
 #ifndef BITCOIN_RPCSERVER_H
 #define BITCOIN_RPCSERVER_H
 
+#define FEATURE_HPAY_FUNDRAWTX
+
 #include "structs/amount.h"
 #include "rpc/rpcprotocol.h"
 #include "structs/uint256.h"
@@ -307,6 +309,9 @@ extern json_spirit::Value createrawtransaction(const json_spirit::Array& params,
 extern json_spirit::Value decoderawtransaction(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value decodescript(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value signrawtransaction(const json_spirit::Array& params, bool fHelp);
+#ifdef FEATURE_HPAY_FUNDRAWTX
+extern json_spirit::Value fundrawtransaction(const json_spirit::Array& params, bool fHelp);
+#endif /* FEATURE_HPAY_FUNDRAWTX */
 extern json_spirit::Value sendrawtransaction(const json_spirit::Array& params, bool fHelp);
 
 extern json_spirit::Value getblockcount(const json_spirit::Array& params, bool fHelp); // in rpcblockchain.cpp

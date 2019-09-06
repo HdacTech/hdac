@@ -1053,6 +1053,14 @@ Value sendmany(const Array& params, bool fHelp)
     if (params.size() > 3 && params[3].type() != null_type && !params[3].get_str().empty())
         wtx.mapValue["comment"] = params[3].get_str();
 
+#if defined (FEATURE_HPAY_SENDMANY_DEDUCT_FEE) || defined (FEATURE_HPAY_FUNDRAWTX)
+    vector<string> addrStrings;
+    std::set<int> setSubtractFeeFromOutputs;
+    int subtract_idx=0;
+    if (params.size() > 4)
+        addrStrings = ParseStringList(params[4]);
+#endif /* FEATURE_HPAY_SENDMANY_DEDUCT_FEE */
+
     set<CBitcoinAddress> setAddress;
     vector<pair<CScript, CAmount> > vecSend;
 
@@ -1087,7 +1095,12 @@ Value sendmany(const Array& params, bool fHelp)
     CReserveKey keyChange(pwalletMain);
     CAmount nFeeRequired = 0;
     string strFailReason;
+#if defined (FEATURE_HPAY_SENDMANY_DEDUCT_FEE) || defined (FEATURE_HPAY_FUNDRAWTX)
+    int nChangePosRet = -1;
+    bool fCreated = pwalletMain->CreateTransaction(vecSend, wtx, keyChange, nFeeRequired, nChangePosRet, setSubtractFeeFromOutputs, strFailReason);
+#else
     bool fCreated = pwalletMain->CreateTransaction(vecSend, wtx, keyChange, nFeeRequired, strFailReason);
+#endif /* FEATURE_HPAY_FUNDRAWTX */
     if (!fCreated)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, strFailReason);
 

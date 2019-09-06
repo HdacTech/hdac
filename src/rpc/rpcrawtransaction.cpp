@@ -39,6 +39,9 @@ using namespace std;
 #include "utils/util.h"
 #include "utils/utilmoneystr.h"
 #include "wallet/wallettxs.h"
+#ifdef FEATURE_HPAY_FUNDRAWTX
+#include "wallet/coincontrol.h"
+#endif /* FEATURE_HPAY_FUNDRAWTX */
 
 bool OutputCanSend(COutput out);
 uint32_t mc_CheckSigScriptForMutableTx(const unsigned char *src,int size);
@@ -1658,6 +1661,162 @@ Value decodescript(const Array& params, bool fHelp)
     r.push_back(Pair("p2sh", CBitcoinAddress(CScriptID(script)).ToString()));
     return r;
 }
+
+#ifdef FEATURE_HPAY_FUNDRAWTX
+Value fundrawtransaction(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 2)
+        throw runtime_error("Help message not found\n");
+
+    RPCTypeCheck(params, list_of(str_type)(obj_type));
+
+    CCoinControl coinControl;
+    bool changeAddress = 0;
+    int changePosition = -1;
+    bool lockUnspents = false;
+    Array subtractFeeFromOutputs;
+    std::set<int> setSubtractFeeFromOutputs;
+
+    if (params.size() > 1) 
+    {
+        if (params[1].type() == bool_type)
+        {
+            // backward compatibility bool only fallback
+            coinControl.fAllowWatchOnly = params[1].get_bool();
+        } 
+        else 
+        {
+            if (params.size() > 1 && params[1].type() != null_type)
+            {
+                if(params[1].type() == obj_type)
+                {
+                    Object objParams = params[1].get_obj();
+                    BOOST_FOREACH(const Pair& s, objParams) 
+                    {  
+                        if(s.name_ == "includeWatching")
+                        {
+                            if(s.value_.type() == bool_type)
+                            {
+                                coinControl.fAllowWatchOnly = s.value_.get_bool();
+                            }
+                            else
+                            {
+                                throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid value for 'includeWatching' field, should be boolean");                                                                
+                            }
+                        }
+                        if(s.name_ == "changeAddress")
+                        {
+                            if(s.value_.type() == str_type)
+                            {
+                                CBitcoinAddress address(s.value_.get_str());
+                                coinControl.destChange = address.Get();
+                                if (!address.IsValid())
+                                    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("Invalid address: ")+s.value_.get_str());
+                                if(!AddressCanReceive(address.Get()))
+                                {
+                                    throw JSONRPCError(RPC_INSUFFICIENT_PERMISSIONS, "address doesn't have receive permission");        
+                                }
+                                changeAddress = 1;
+                            }
+                            else
+                            {
+                                throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid value for 'changeAddress' field, should be stribg");                                                                
+                            }
+                        }
+                        if(s.name_ == "changePosition")
+                        {
+                            if(s.value_.type() == int_type)
+                            {
+                                changePosition = s.value_.get_int();
+                                coinControl.fChangePosition = changePosition;
+                            }
+                            else
+                            {
+                                throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid value for 'changePosition' field, should be integer");                                                                
+                            }
+                        }
+                        if(s.name_ == "feeRate")
+                        {
+                            if(s.value_.type() == real_type)
+                            {
+                                if(s.value_.get_real() == 0)
+                                {
+                                    // normal fee 
+                                }
+                                else
+                                {
+                                    CAmount nAmount = AmountFromValue(s.value_.get_real());
+                                    coinControl.nFeeRate = CFeeRate(nAmount, 1000);
+                                    coinControl.fOverrideFeeRate = true;
+                                    if(fDebug>1)LogPrintf("fundrawtransaction set %d feeRate %d \n",nAmount,coinControl.nFeeRate.ToString());
+                                }
+                            }
+                            else
+                            {
+                                throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid value for 'feeRate' field, should be real");                                                                
+                            }
+                        }
+                        if(s.name_ == "subtractFeeFromOutputs")
+                        {
+                            if(s.value_.type() == array_type)
+                            {
+                                subtractFeeFromOutputs = s.value_.get_array();
+                            }
+                            else
+                            {
+                                throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid value for 'subtractFeeFromOutputs' field, should be array");                                                                
+                            }
+                        }
+                    }
+                }
+             }
+        }
+    }
+
+    // parse hex string from parameter
+    CTransaction tx;
+    if (!DecodeHexTx(tx, params[0].get_str())) {
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+    }
+
+    if (tx.vout.size() == 0) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "TX must have at least one output");
+    }
+
+    if (changePosition != -1 &&
+        (changePosition < 0 || (unsigned int)changePosition > tx.vout.size())) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "changePosition out of bounds");
+    }
+
+    for (unsigned int idx = 0; idx < subtractFeeFromOutputs.size(); idx++) 
+    {
+        int pos = subtractFeeFromOutputs[idx].get_int();
+        if (setSubtractFeeFromOutputs.count(pos))
+            throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Invalid parameter, duplicated position: %d", pos));
+        if (pos < 0)
+            throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Invalid parameter, negative position: %d", pos));
+        if (pos >= int(tx.vout.size()))
+            throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Invalid parameter, position too large: %d", pos));
+        setSubtractFeeFromOutputs.insert(pos);
+    }
+
+    if(fDebug>1)LogPrintf("Befor fund pos %d %s\n",changePosition,tx.ToString());
+    CAmount nFeeOut;
+    string strFailReason;
+    if(!pwalletMain->FundTransaction(tx, nFeeOut, changePosition, strFailReason, lockUnspents, setSubtractFeeFromOutputs, coinControl)) 
+    {
+        throw JSONRPCError(RPC_WALLET_ERROR, strFailReason);
+    }
+    if(fDebug>1)LogPrintf("After fund pos %d %s\n",changePosition,tx.ToString());
+
+    Object result;
+    result.push_back(Pair("hex", EncodeHexTx(CTransaction(tx))));
+    result.push_back(Pair("changepos", changePosition));
+    result.push_back(Pair("fee", ValueFromAmount(nFeeOut)));
+    return result;
+
+}
+#endif /* FEATURE_HPAY_FUNDRAWTX */
 
 Value signrawtransaction(const Array& params, bool fHelp)
 {

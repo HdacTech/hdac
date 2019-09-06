@@ -9,6 +9,8 @@
 #ifndef BITCOIN_WALLET_H
 #define BITCOIN_WALLET_H
 
+#define FEATURE_HPAY_FUNDRAWTX
+
 #include "structs/amount.h"
 #include "primitives/block.h"
 #include "primitives/transaction.h"
@@ -449,8 +451,17 @@ public:
     CAmount GetWatchOnlyBalance() const;
     CAmount GetUnconfirmedWatchOnlyBalance() const;
     CAmount GetImmatureWatchOnlyBalance() const;
+    #ifdef FEATURE_HPAY_FUNDRAWTX
+    bool FundTransaction(CTransaction &tx, CAmount &nFeeRet, int &nChangePosInOut, std::string &strFailReason, bool lockUnspents,
+                         const std::set<int> &setSubtractFeeFromOutputs, CCoinControl coinControl);
+    #endif
+    #if defined (FEATURE_HPAY_SENDMANY_DEDUCT_FEE) || defined (FEATURE_HPAY_FUNDRAWTX)
+    bool CreateTransaction(const std::vector<std::pair<CScript, CAmount> >& vecSend,
+                           CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet, int& nChangePosInOut, const std::set<int> &setSubtractFeeFromOutputs, std::string& strFailReason, const CCoinControl *coinControl = NULL);
+    #else
     bool CreateTransaction(const std::vector<std::pair<CScript, CAmount> >& vecSend,
                            CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet, std::string& strFailReason, const CCoinControl *coinControl = NULL);
+    #endif
     bool CreateTransaction(CScript scriptPubKey, const CAmount& nValue,
                            CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet, std::string& strFailReason, const CCoinControl *coinControl = NULL);
     int SelectHdacCombineCoinsMinConf(int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, mc_Buffer *in_map, mc_Buffer *in_amounts,

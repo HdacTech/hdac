@@ -120,6 +120,9 @@ static const CRPCCommand vRPCCommands[] =
     { "rawtransactions",    "getrawtransaction",      &getrawtransaction,      true,      false,      false },
     { "rawtransactions",    "sendrawtransaction",     &sendrawtransaction,     false,     false,      false },
     { "rawtransactions",    "signrawtransaction",     &signrawtransaction,     false,     false,      false }, /* uses wallet if enabled */
+#ifdef FEATURE_HPAY_FUNDRAWTX
+    { "rawtransactions",    "fundrawtransaction",     &fundrawtransaction,     false,     false,      false }, /* uses wallet if enabled */
+#endif /* FEATURE_HPAY_FUNDRAWTX */
     { "rawtransactions",    "appendrawchange",        &appendrawchange,        false,     false,      true },
     { "hidden",             "appendrawmetadata",      &appendrawmetadata,      false,     false,      true },
     { "rawtransactions",    "appendrawdata",          &appendrawmetadata,      false,     false,      true },

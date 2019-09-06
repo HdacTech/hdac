@@ -251,6 +251,10 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "signrawtransaction", 1 },
     { "signrawtransaction", 2 },
     { "sendrawtransaction", 1 },
+	#ifdef FEATURE_HPAY_FUNDRAWTX
+    { "fundrawtransaction", 1},
+    { "fundrawtransaction", 2},
+	#endif
     { "gettxout", 1 },
     { "gettxout", 2 },
     { "lockunspent", 0 },

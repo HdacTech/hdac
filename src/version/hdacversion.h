@@ -15,7 +15,7 @@
 #endif
 
 #define HDAC_BUILD_MAJOR 1
-#define HDAC_BUILD_MINOR 09
+#define HDAC_BUILD_MINOR 10
 #define HDAC_BUILD_REVISION 0 
 // Build version is major.minor.revision ( 1.08.0 )
 

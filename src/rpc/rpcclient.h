@@ -6,6 +6,7 @@
 
 #ifndef BITCOIN_RPCCLIENT_H
 #define BITCOIN_RPCCLIENT_H
+#define FEATURE_HPAY_FUNDRAWTX
 
 #include "json/json_spirit_reader_template.h"
 #include "json/json_spirit_utils.h"
